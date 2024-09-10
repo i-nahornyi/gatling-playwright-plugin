@@ -1,3 +1,9 @@
+.idea
+target
+
+/.mvn/wrapper/*.jar
+
+
 *.class
 *.log
 
