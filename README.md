@@ -1,5 +1,8 @@
 # Gatling Playwright Plugin
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.i-nahornyi/gatling-playwright-plugin)](https://central.sonatype.com/artifact/io.github.i-nahornyi/gatling-playwright-plugin)
+
+
 A simple Gatling plugin for UI performance testing using Playwright.
 
 _`Created with love for Gatling adepts`_
