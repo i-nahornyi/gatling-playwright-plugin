@@ -2,6 +2,8 @@
 
 A simple Gatling plugin for UI performance testing using Playwright.
 
+_`Created with love for Gatling adepts`_
+
 ## Example Simulations
 
 Explore the example simulations written in Java and Scala to see how to use this plugin:
