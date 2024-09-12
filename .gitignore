@@ -1,3 +1,10 @@
+.idea
+target
+results
+
+/.mvn/wrapper/*.jar
+
+
 *.class
 *.log
 
