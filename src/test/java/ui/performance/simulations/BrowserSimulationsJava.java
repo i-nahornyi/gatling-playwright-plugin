@@ -26,10 +26,17 @@ public class BrowserSimulationsJava extends Simulation {
             .buildProtocol();
 
 
-    /// [Example#1] How to put your variable to gatling session
+    /// [Example#1] How to get and put your variable to gatling session
     BiFunction<Page, BrowserSession, BrowserSession> exampleFlow = (page, browserSession) -> {
+        /// You can resolve EL value from session for available options see => https://docs.gatling.io/reference/script/core/session/el/
+        Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{url.exists()}");
+        System.out.println(valueFromSession);
+        /// Another one example
+        String anotherValueFromSession = browserSession.resolveSessionExpression(s -> s.getString("url")+"updated").toString();
+        System.out.println(anotherValueFromSession);
+
         page.navigate("https://playwright.dev/java/docs/debug");
-        Session session = browserSession.gatlingJavaSession.set("your_args", page.title());
+        Session session = browserSession.getJavaSession().set("your_args", page.title());
         return browserSession.updateBrowserSession(session);
     };
 
@@ -41,8 +48,8 @@ public class BrowserSimulationsJava extends Simulation {
         /// How to evaluate JS in playwrights see ===> https://playwright.dev/java/docs/evaluating
         Map<String, Double> timing = (Map<String, Double>) page.evaluate("performance.timing");
 
-        browserSession.actionStartTime = timing.get("navigationStart").longValue();
-        browserSession.actionEndTime = timing.get("loadEventEnd").longValue();
+        browserSession.setActionStartTime(timing.get("navigationStart").longValue());
+        browserSession.setActionEndTime(timing.get("loadEventEnd").longValue());
 
         return browserSession;
     };
@@ -64,7 +71,7 @@ public class BrowserSimulationsJava extends Simulation {
         //// If assertion fired, next code not executed
         //// and session will be lost
         //// solution look in [Example#3]
-        Session session = browserSession.gatlingJavaSession.set("your_args", "Changed_args");
+        Session session = browserSession.getJavaSession().set("your_args", "Changed_args");
 
         return browserSession.updateBrowserSession(session);
     };
@@ -72,7 +79,12 @@ public class BrowserSimulationsJava extends Simulation {
 
     ScenarioBuilder mainScenario = scenario("test").repeat(1).on(
             group("flow-a").on(
-                    exec(BrowserDsl.browserAction("test-action-1").open("https://demo.playwright.dev/todomvc/#/")),
+                    exec(session -> session.set("actionName", "test-action-1").set("url", "https://demo.playwright.dev/todomvc/#/")),
+                    /*
+                     *  You can use EL syntax for action name and url
+                     */
+                    exec(BrowserDsl.browserAction("#{actionName}").open("#{url}")),
+                    exec(BrowserDsl.browserAction(session -> session.getString("actionName")).open(session -> session.getString("url"))),
                     pause(1, 5),
                     exec(BrowserDsl.browserAction("test-action-2").executeFlow(exampleFlow)),
                     /*
@@ -83,7 +95,7 @@ public class BrowserSimulationsJava extends Simulation {
                         return session;
                     }),
                     exec(BrowserDsl.browserAction("test-action-3").executeFlow(exampleFlow2)),
-                    exec(BrowserDsl.browserAction().browserCleanContext()),
+                    exec(BrowserDsl.browserCleanContext()),
                     exec(BrowserDsl.browserAction("test-action-4").executeFlow(exampleFlow3)),
                     exec(BrowserDsl.browserAction("test-action-5").executeFlow(exampleFlow4)),
                     /*
@@ -96,7 +108,7 @@ public class BrowserSimulationsJava extends Simulation {
                     /*
                      *  Clear browserContext on the end of loop
                      */
-                    exec(BrowserDsl.browserAction().browserCleanContext())
+                    exec(BrowserDsl.browserCleanContext())
             )
     );
 

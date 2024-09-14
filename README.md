@@ -19,6 +19,7 @@ Explore the example simulations written in Java and Scala to see how to use this
 Here's the current progress and planned features for the plugin:
 
 - [x] Java API
+- [x] Support for Gatling EL in URL,names and script blocks.
 - [ ] Support for additional browsers (Firefox, Edge, etc.)
 - [ ] Multithreading support
 - [ ] Video recording and screenshots

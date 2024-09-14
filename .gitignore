@@ -3,6 +3,7 @@ target
 results
 
 /.mvn/wrapper/*.jar
+buildCommand.txt
 
 
 *.class
