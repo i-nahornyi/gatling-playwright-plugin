@@ -1,8 +1,10 @@
 package ui.performance.simulations
 
+import com.microsoft.playwright.Browser.NewContextOptions
+import com.microsoft.playwright.BrowserType.LaunchOptions
+import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions
 import com.microsoft.playwright.options.WaitUntilState
-import com.microsoft.playwright.{Browser, BrowserType, Page}
 import io.gatling.core.Predef._
 import io.gatling.core.protocol.Protocol
 import io.gatling.core.session.Session
@@ -17,8 +19,8 @@ class BrowserSimulationsScala extends Simulation {
 
   val browserProtocol: Protocol = gatlingBrowser
     //// This part of setup block is optional
-    .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080))
-    .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
+    .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
+    .withLaunchOptions(new LaunchOptions().setHeadless(false))
     ////
     .build()
 

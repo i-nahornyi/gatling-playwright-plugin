@@ -14,7 +14,6 @@ trait ActionsBase {
   val contextOptions: Browser.NewContextOptions = browserComponent.contextOptions
   val browser: Browser = browserComponent.browser
 
-
   protected def executeNext(
                              session: Session,
                              sent: Long,
@@ -27,11 +26,11 @@ trait ActionsBase {
                              isCrashed: Boolean
                            ): Unit = {
 
-    if(!isCrashed) {
+    if (!isCrashed) {
       ctx.coreComponents.statsEngine.logResponse(session.scenario, session.groups, requestName, sent, received, status, responseCode, message)
     }
     else {
-      ctx.coreComponents.statsEngine.logRequestCrash(session.scenario,session.groups,requestName,message.get)
+      ctx.coreComponents.statsEngine.logRequestCrash(session.scenario, session.groups, requestName, message.get)
     }
     next ! session.logGroupRequestTimings(sent, received)
   }

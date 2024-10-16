@@ -1,6 +1,7 @@
 package io.gatling.custom.browser.actions
 
-import com.microsoft.playwright.Page
+import com.microsoft.playwright.{Page, PlaywrightException}
+import com.microsoft.playwright.Page.NavigateOptions
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.commons.util.Clock
 import io.gatling.commons.validation.Validation
@@ -16,7 +17,7 @@ import org.opentest4j.AssertionFailedError
 import java.util.function.BiFunction
 
 
-case class BrowserActionOpen(actionName: Expression[String], url: Expression[String], ctx: ScenarioContext, next: Action)
+case class BrowserActionOpen(actionName: Expression[String], url: Expression[String], options: NavigateOptions = null, ctx: ScenarioContext, next: Action)
   extends RequestAction with NameGen with ActionsBase {
 
   var page: Page = _
@@ -31,10 +32,36 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       resolvedUrl <- url(session)
     } yield {
       if (session.contains("__browser_context")) this.page = session("__browser_context").as[Page] else this.page = browser.newContext(contextOptions).newPage()
+
+      var isCrashed = false
+      var status: Status = OK
+      var message: Option[String] = Option.empty
+
       val startTime = clock.nowMillis
-      page.navigate(resolvedUrl)
-      val endTime = clock.nowMillis
-      executeNext(session.set("__browser_context", page), startTime, endTime, OK, next, resolvedRequestName, None, None, isCrashed = false)
+
+      try {
+        if(options == null) page.navigate(resolvedUrl) else page.navigate(resolvedUrl,options)
+      }
+      catch {
+        case assertionFailedError: AssertionFailedError =>
+          logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
+          status = KO
+          message = Option.apply(assertionFailedError.getMessage)
+        case playwrightException: PlaywrightException =>
+          logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
+          status = KO
+          message = Option.apply(playwrightException.getMessage)
+        case exception: Exception =>
+          logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
+          status = KO
+          message = Option.apply("action crashed")
+          isCrashed = true;
+      }
+      finally {
+        val endTime = clock.nowMillis
+        if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
+        executeNext(session.set("__browser_context", page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
+      }
     }
 
   override def clock: Clock = ctx.coreComponents.clock
@@ -55,25 +82,34 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
     resolvedRequestName <- requestName(session)
   } yield {
     if (session.contains("__browser_context")) page = session("__browser_context").as[Page] else page = browser.newContext(contextOptions).newPage()
-    var browserSession: BrowserSession = new BrowserSession(session)
+
+    var isCrashed = false
     var status: Status = OK
     var message: Option[String] = Option.empty
+
     val postProcessorFunc = function.andThen(result => {
       status = result.getStatus
       message = result.getErrorMessage
       result
     })
+
+    var browserSession: BrowserSession = new BrowserSession(session)
     var startTime = clock.nowMillis
-    var isCrashed = false
+
     try {
       browserSession = postProcessorFunc.apply(page, browserSession)
     }
     catch {
       case assertionFailedError: AssertionFailedError =>
+        logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
         status = KO
         message = Option.apply(assertionFailedError.getMessage)
+      case playwrightException: PlaywrightException =>
+        logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
+        status = KO
+        message = Option.apply(playwrightException.getMessage)
       case exception: Exception =>
-        logger.error(s"action: $resolvedRequestName crashed ${exception.getMessage}")
+        logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
         status = KO
         message = Option.apply("action crashed")
         isCrashed = true;

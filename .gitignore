@@ -3,8 +3,10 @@ target
 results
 
 /.mvn/wrapper/*.jar
-buildCommand.txt
 
+#For building dependency
+buildCommand.txt
+setting.xml
 
 *.class
 *.log

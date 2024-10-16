@@ -1,7 +1,7 @@
 package ui.performance.simulations;
 
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Browser.NewContextOptions;
+import com.microsoft.playwright.BrowserType.LaunchOptions;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.WaitUntilState;
@@ -20,8 +20,8 @@ public class BrowserSimulationsJava extends Simulation {
     ProtocolBuilder browserProtocol = BrowserDsl
             .gatlingBrowser()
             //// This part of setup block is optional
-            .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
-            .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
+            .withLaunchOptions(new LaunchOptions().setHeadless(false))
+            .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
             ////
             .buildProtocol();
 
@@ -32,7 +32,7 @@ public class BrowserSimulationsJava extends Simulation {
         Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{url.exists()}");
         System.out.println(valueFromSession);
         /// Another one example
-        String anotherValueFromSession = browserSession.resolveSessionExpression(s -> s.getString("url")+"updated").toString();
+        String anotherValueFromSession = browserSession.resolveSessionExpression(s -> s.getString("url") + "updated").toString();
         System.out.println(anotherValueFromSession);
 
         page.navigate("https://playwright.dev/java/docs/debug");
@@ -42,6 +42,7 @@ public class BrowserSimulationsJava extends Simulation {
 
 
     ///// [Example#2] How to set execution timing of action based on your logic
+
     BiFunction<Page, BrowserSession, BrowserSession> exampleFlow2 = (page, browserSession) -> {
         page.navigate("https://playwright.dev/", new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
 
@@ -84,6 +85,7 @@ public class BrowserSimulationsJava extends Simulation {
                      *  You can use EL syntax for action name and url
                      */
                     exec(BrowserDsl.browserAction("#{actionName}").open("#{url}")),
+                    pause(1, 5),
                     exec(BrowserDsl.browserAction(session -> session.getString("actionName")).open(session -> session.getString("url"))),
                     pause(1, 5),
                     exec(BrowserDsl.browserAction("test-action-2").executeFlow(exampleFlow)),
@@ -112,10 +114,8 @@ public class BrowserSimulationsJava extends Simulation {
             )
     );
 
-
     {
         setUp(mainScenario.injectOpen(OpenInjectionStep.atOnceUsers(1)).protocols(browserProtocol));
     }
-
 
 }
