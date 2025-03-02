@@ -3,8 +3,8 @@ package ui.performance.simulations;
 import com.microsoft.playwright.Browser.NewContextOptions;
 import com.microsoft.playwright.BrowserType.LaunchOptions;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Page.NavigateOptions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
-import com.microsoft.playwright.options.WaitUntilState;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
 import io.gatling.custom.browser.model.BrowserSession;
 import io.gatling.javaapi.core.*;
@@ -13,6 +13,7 @@ import org.opentest4j.AssertionFailedError;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import static com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE;
 import static io.gatling.javaapi.core.CoreDsl.*;
 
 public class BrowserSimulationsJava extends Simulation {
@@ -44,7 +45,7 @@ public class BrowserSimulationsJava extends Simulation {
     ///// [Example#2] How to set execution timing of action based on your logic
 
     BiFunction<Page, BrowserSession, BrowserSession> exampleFlow2 = (page, browserSession) -> {
-        page.navigate("https://playwright.dev/", new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+        page.navigate("https://playwright.dev/", new NavigateOptions().setWaitUntil(NETWORKIDLE));
 
         /// How to evaluate JS in playwrights see ===> https://playwright.dev/java/docs/evaluating
         Map<String, Double> timing = (Map<String, Double>) page.evaluate("performance.timing");

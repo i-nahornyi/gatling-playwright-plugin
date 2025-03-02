@@ -2,7 +2,9 @@
 target
 results
 
-/.mvn/wrapper/*.jar
+.mvn
+/mvnw
+/mvnw.cmd
 
 #For building dependency
 buildCommand.txt
@@ -13,3 +15,4 @@ setting.xml
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+

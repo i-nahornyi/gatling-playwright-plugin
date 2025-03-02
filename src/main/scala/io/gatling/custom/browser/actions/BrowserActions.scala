@@ -1,7 +1,7 @@
 package io.gatling.custom.browser.actions
 
-import com.microsoft.playwright.{Page, PlaywrightException}
 import com.microsoft.playwright.Page.NavigateOptions
+import com.microsoft.playwright.{Page, PlaywrightException}
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.commons.util.Clock
 import io.gatling.commons.validation.Validation
@@ -31,7 +31,11 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       resolvedRequestName <- requestName(session)
       resolvedUrl <- url(session)
     } yield {
-      if (session.contains("__browser_context")) this.page = session("__browser_context").as[Page] else this.page = browser.newContext(contextOptions).newPage()
+
+      logger.debug(s"browser with userID - ${session.userId} connected - ${browserInstances(session.userId).isConnected}")
+      logger.debug(s"""userID - ${session.userId} execute Open action $resolvedRequestName  --> $resolvedUrl""")
+
+      this.page = getBrowserContextFromSession(session)
 
       var isCrashed = false
       var status: Status = OK
@@ -60,7 +64,7 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       finally {
         val endTime = clock.nowMillis
         if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
-        executeNext(session.set("__browser_context", page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
+        executeNext(session.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
       }
     }
 
@@ -81,7 +85,9 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
   override def sendRequest(session: Session): Validation[Unit] = for {
     resolvedRequestName <- requestName(session)
   } yield {
-    if (session.contains("__browser_context")) page = session("__browser_context").as[Page] else page = browser.newContext(contextOptions).newPage()
+    logger.debug(s"browser with userID - ${session.userId} connected - ${browserInstances(session.userId).isConnected}")
+    logger.debug(s"""userID - ${session.userId} execute Flow action $resolvedRequestName""")
+    this.page = getBrowserContextFromSession(session)
 
     var isCrashed = false
     var status: Status = OK
@@ -119,7 +125,7 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
       if (browserSession.getActionStartTime != 0) startTime = browserSession.getActionStartTime
       if (browserSession.getActionEndTime != 0) endTime = browserSession.getActionEndTime
       if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
-      executeNext(browserSession.getScalaSession().set("__browser_context", page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
+      executeNext(browserSession.getScalaSession().set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
     }
   }
 
@@ -128,7 +134,7 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
   override def requestName: Expression[String] = actionName
 }
 
-case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extends ChainableAction with NameGen {
+case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extends ChainableAction with NameGen with ActionsBase {
   var page: Page = _
 
   override def statsEngine: StatsEngine = ctx.coreComponents.statsEngine
@@ -136,7 +142,15 @@ case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extend
   override def name: String = genName("clearBrowserContext")
 
   override protected def execute(session: Session): Unit = {
-    if (session.contains("__browser_context")) session("__browser_context").as[Page].close()
-    next ! session.remove("__browser_context")
+
+    logger.debug(s"browser with userID - ${session.userId} connected - ${browserInstances(session.userId).isConnected}")
+    logger.debug(s"userID - ${session.userId} execute ClearContext action")
+
+    if (session.contains(BROWSER_CONTEXT_KEY)){
+      val page = session(BROWSER_CONTEXT_KEY).as[Page]
+      page.close()
+      logger.debug(s"userID - ${session.userId} browser context cleared")
+    }
+    next ! session.remove(BROWSER_CONTEXT_KEY)
   }
 }
