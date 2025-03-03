@@ -98,7 +98,6 @@ public class BrowserSimulationsJava extends Simulation {
                         return session;
                     }),
                     exec(BrowserDsl.browserAction("test-action-3").executeFlow(exampleFlow2)),
-                    exec(BrowserDsl.browserCleanContext()),
                     exec(BrowserDsl.browserAction("test-action-4").executeFlow(exampleFlow3)),
                     exec(BrowserDsl.browserAction("test-action-5").executeFlow(exampleFlow4)),
                     /*

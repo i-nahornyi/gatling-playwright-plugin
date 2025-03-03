@@ -1,7 +1,7 @@
 package io.gatling.custom.browser.actions
 
 import com.microsoft.playwright.Page.NavigateOptions
-import com.microsoft.playwright.{Page, PlaywrightException}
+import com.microsoft.playwright.{BrowserContext, Page, PlaywrightException}
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.commons.util.Clock
 import io.gatling.commons.validation.Validation
@@ -12,6 +12,7 @@ import io.gatling.core.stats.StatsEngine
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
 import io.gatling.custom.browser.model.BrowserSession
+import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
 import org.opentest4j.AssertionFailedError
 
 import java.util.function.BiFunction
@@ -32,10 +33,8 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       resolvedUrl <- url(session)
     } yield {
 
-      logger.debug(s"browser with userID - ${session.userId} connected - ${browserInstances(session.userId).isConnected}")
-      logger.debug(s"""userID - ${session.userId} execute Open action $resolvedRequestName  --> $resolvedUrl""")
-
       this.page = getBrowserContextFromSession(session)
+      logger.debug(s"userID-${session.userId}, execute Open action $resolvedRequestName  --> $resolvedUrl")
 
       var isCrashed = false
       var status: Status = OK
@@ -85,9 +84,9 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
   override def sendRequest(session: Session): Validation[Unit] = for {
     resolvedRequestName <- requestName(session)
   } yield {
-    logger.debug(s"browser with userID - ${session.userId} connected - ${browserInstances(session.userId).isConnected}")
-    logger.debug(s"""userID - ${session.userId} execute Flow action $resolvedRequestName""")
+
     this.page = getBrowserContextFromSession(session)
+    logger.debug(s"userID-${session.userId}, execute Flow action $resolvedRequestName")
 
     var isCrashed = false
     var status: Status = OK
@@ -143,14 +142,19 @@ case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extend
 
   override protected def execute(session: Session): Unit = {
 
-    logger.debug(s"browser with userID - ${session.userId} connected - ${browserInstances(session.userId).isConnected}")
-    logger.debug(s"userID - ${session.userId} execute ClearContext action")
+    val userId = session.userId
+
+    logger.debug(s"userID-$userId, execute ClearContext action")
 
     if (session.contains(BROWSER_CONTEXT_KEY)){
-      val page = session(BROWSER_CONTEXT_KEY).as[Page]
-      page.close()
-      logger.debug(s"userID - ${session.userId} browser context cleared")
+
+      session(BROWSER_CONTEXT_KEY).as[Page].context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
+      browserContextsPool.remove(userId)
+
+      logger.debug(s"userID-$userId, remove BrowserContext from BrowserContextPool")
     }
+
+    logger.debug(s"userID-$userId, remove BrowserContext from session")
     next ! session.remove(BROWSER_CONTEXT_KEY)
   }
 }

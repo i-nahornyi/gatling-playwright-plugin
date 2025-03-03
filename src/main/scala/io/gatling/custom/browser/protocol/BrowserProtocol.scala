@@ -1,17 +1,16 @@
 package io.gatling.custom.browser.protocol
 
-import com.microsoft.playwright.{Browser, BrowserType}
+import com.microsoft.playwright.{Browser, BrowserType, Playwright}
+import com.typesafe.scalalogging.StrictLogging
 import io.gatling.core.CoreComponents
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.protocol.{Protocol, ProtocolKey}
-
-import scala.collection.concurrent.TrieMap
 
 case class BrowserProtocol(options: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions) extends Protocol {
   type Component = BrowserComponent
 }
 
-object BrowserProtocol {
+object BrowserProtocol extends StrictLogging {
   val browserProtocolKey: ProtocolKey[BrowserProtocol, BrowserComponent] = new ProtocolKey[BrowserProtocol, BrowserComponent] {
     override def protocolClass: Class[Protocol] = classOf[BrowserProtocol].asInstanceOf[Class[Protocol]]
 
@@ -20,8 +19,16 @@ object BrowserProtocol {
     }
 
     override def newComponents(coreComponents: CoreComponents): BrowserProtocol => BrowserComponent = browserProtocol => {
-      val browserInstance: TrieMap[Long, Browser] = TrieMap.empty[Long, Browser]
-      BrowserComponent(browserInstance, browserProtocol.options, browserProtocol.contextOptions)
+      val playwright: Playwright = Playwright.create()
+      val browserInstance: Browser = playwright.chromium().launch(browserProtocol.options)
+
+      coreComponents.actorSystem.registerOnTermination({
+        logger.debug("Received termination signal; closing browser and Playwright instances.")
+        browserInstance.close(new Browser.CloseOptions().setReason("Received termination signal from Gatling."))
+        playwright.close()
+      })
+
+      BrowserComponent(playwright,browserInstance, browserProtocol.options, browserProtocol.contextOptions)
     }
   }
 }

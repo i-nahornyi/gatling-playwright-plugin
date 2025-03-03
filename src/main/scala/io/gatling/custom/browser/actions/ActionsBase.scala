@@ -1,28 +1,39 @@
 package io.gatling.custom.browser.actions
 
-import com.microsoft.playwright.{Browser, Page}
+import com.microsoft.playwright.{Browser, BrowserContext, Page}
+import com.typesafe.scalalogging.StrictLogging
 import io.gatling.core.Predef.Status
 import io.gatling.core.action.Action
 import io.gatling.core.session.Session
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.custom.browser.protocol.BrowserProtocol
+import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
-trait ActionsBase {
+trait ActionsBase extends StrictLogging {
 
   val ctx: ScenarioContext
   private val browserComponent = ctx.protocolComponentsRegistry.components(BrowserProtocol.browserProtocolKey)
+  private val browserInstances: Browser = browserComponent.browser
+  val browserContextsPool: mutable.Map[Long, BrowserContext] = browserComponent.browserContextsPool
   val contextOptions: Browser.NewContextOptions = browserComponent.contextOptions
-  val browserInstances: TrieMap[Long, Browser] = browserComponent.browserInstances
-  val BROWSER_CONTEXT_KEY = "gatling.browserContext"
 
   protected def getBrowserContextFromSession(session: Session): Page = {
 
-    if (session.contains(BROWSER_CONTEXT_KEY))
+    val userID = session.userId
+
+    if (browserContextsPool.contains(userID)) {
+      logger.debug(s"browserContextPool contains context for userID-$userID")
       session(BROWSER_CONTEXT_KEY).as[Page]
-    else
-      browserInstances(session.userId).newContext(contextOptions).newPage()
+    } else {
+      logger.debug(s"browserContextPool doesn't contains context for userID-$userID, create new")
+      val browserContext: BrowserContext = browserInstances.newContext(contextOptions)
+      browserContextsPool.put(userID, browserContext)
+      val page = browserContext.newPage()
+      session.set(BROWSER_CONTEXT_KEY, page)
+      page
+    }
   }
 
   protected def executeNext(

@@ -32,7 +32,7 @@
     <scm>
         <connection>scm:git:git://github.com/i-nahornyi/gatling-playwright-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:/i-nahornyi/gatling-playwright-plugin.git</developerConnection>
-        <url>>https://github.com/i-nahornyi/gatling-playwright-plugin</url>
+        <url>https://github.com/i-nahornyi/gatling-playwright-plugin</url>
     </scm>
 
     <properties>
