@@ -149,12 +149,14 @@ case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extend
     if (session.contains(BROWSER_CONTEXT_KEY)){
 
       session(BROWSER_CONTEXT_KEY).as[Page].context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
+      logger.debug(s"userID-$userId, remove BrowserContext from BrowserContextPool")
       browserContextsPool.remove(userId)
 
-      logger.debug(s"userID-$userId, remove BrowserContext from BrowserContextPool")
+      logger.debug(s"userID-$userId, remove BrowserContext from session")
+      next ! session.remove(BROWSER_CONTEXT_KEY)
     }
-
-    logger.debug(s"userID-$userId, remove BrowserContext from session")
-    next ! session.remove(BROWSER_CONTEXT_KEY)
+    else {
+      next ! session
+    }
   }
 }

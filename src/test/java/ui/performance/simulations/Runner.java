@@ -9,11 +9,12 @@ public class Runner {
     // MultiUserWorkaround
     // BrowserSimulationsJava
     // BrowserSimulationsScala
+    // Smoke
 
 
     public static void main(String[] args) {
         String [] runParams = new String[]{
-                GatlingCliOptions.Simulation.shortOption(),"ui.performance.simulations.ClosedModelBrowser",
+                GatlingCliOptions.Simulation.shortOption(),"ui.performance.simulations.Smoke",
                 GatlingCliOptions.ResultsFolder.shortOption(), "target/gatling"
         };
 
