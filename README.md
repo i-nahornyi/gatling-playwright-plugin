@@ -7,12 +7,9 @@ A simple Gatling plugin for UI performance testing using Playwright.
 
 _`Created with love for Gatling adepts`_
 
-## Example Simulations
+## How to Start
 
-Explore the example simulations written in Java and Scala to see how to use this plugin:
-
-- [Java Simulation](src/test/java/ui/performance/simulations/BrowserSimulationsJava.java)
-- [Scala Simulation](src/test/scala/ui/performance/simulations/BrowserSimulationsScala.scala)
+See instructions [here](./docs/README.md)
 
 ## TODO List
 
