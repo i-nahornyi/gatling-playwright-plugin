@@ -1,8 +1,10 @@
 package ui.performance.simulations
 
+import com.microsoft.playwright.Browser.NewContextOptions
+import com.microsoft.playwright.BrowserType.LaunchOptions
+import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions
 import com.microsoft.playwright.options.WaitUntilState
-import com.microsoft.playwright.{Browser, BrowserType, Page}
 import io.gatling.core.Predef._
 import io.gatling.core.protocol.Protocol
 import io.gatling.core.session.Session
@@ -17,15 +19,24 @@ class BrowserSimulationsScala extends Simulation {
 
   val browserProtocol: Protocol = gatlingBrowser
     //// This part of setup block is optional
-    .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080))
-    .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
+    .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
+    .withLaunchOptions(new LaunchOptions().setHeadless(false))
     ////
     .build()
 
-  /// [Example#1] How to put your variable to gatling session
+  /// [Example#1] How to get and put your variable to gatling session
   def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {
+
+    /// You can resolve EL value from session for available options see => https://docs.gatling.io/reference/script/core/session/el/
+    val valueFromSession = browserSession.resolveSessionValue("#{url.exists()}")
+    println(valueFromSession)
+    /// Another one example
+    val modifiedValueFromSession = browserSession.resolveSessionValue(session => s"${session("url").as[String]}updated")
+    println(modifiedValueFromSession)
+
     page.navigate("https://playwright.dev/java/docs/debug")
-    val session: Session = browserSession.gatlingScalaSession.set("your_args", page.title())
+
+    val session: Session = browserSession.getScalaSession().set("your_args", page.title())
     browserSession.updateBrowserSession(session)
   }
 
@@ -36,8 +47,8 @@ class BrowserSimulationsScala extends Simulation {
     /// How to evaluate JS in playwrights see ===> https://playwright.dev/java/docs/evaluating
     def timing: Map[String, Double] = page.evaluate("performance.timing").asInstanceOf[java.util.Map[String, Double]].asScala.toMap
 
-    browserSession.actionStartTime = timing("navigationStart").asInstanceOf[Long]
-    browserSession.actionEndTime = timing("loadEventEnd").asInstanceOf[Long]
+    browserSession.setActionStartTime(timing("navigationStart").asInstanceOf[Long])
+    browserSession.setActionEndTime(timing("loadEventEnd").asInstanceOf[Long])
 
     browserSession
   }
@@ -60,14 +71,22 @@ class BrowserSimulationsScala extends Simulation {
     //// If assertion fired, next code not executed
     //// and session will be lost
     //// solution look in [Example#3]
-    val session: Session = browserSession.gatlingScalaSession.set("your_args", "Changed_args")
+    val session: Session = browserSession.getScalaSession().set("your_args", "Changed_args")
 
     browserSession.updateBrowserSession(session)
   }
 
   def mainScenario: ScenarioBuilder = scenario("test").repeat(1) {
     group("flow-a")(
-      exec(browserAction("test-action-1").open("https://demo.playwright.dev/todomvc/#/")),
+      exec(session => session.set("actionName", "test-action-1")
+        .set("url", "https://demo.playwright.dev/todomvc/#/")
+        .set("test_boolean",true)),
+      /*
+       *  You can use EL syntax for action name and url
+      */
+      exec(browserAction("#{actionName}").open("#{url}")),
+      pause(1, 5),
+      exec(browserAction(session => session("actionName").as[String]).open(session => session("url").as[String])),
       pause(1, 5),
       exec(browserAction("test-action-2").executeFlow(exampleFlow)),
       /*
@@ -79,10 +98,10 @@ class BrowserSimulationsScala extends Simulation {
       }),
       exec(browserAction("test-action-3").executeFlow(exampleFlow2)),
       exec(browserAction("test-action-4").executeFlow(exampleFlow3)),
-      exec(browserAction("test-action-5").executeFlow(exampleFlow4))
-      /*
-      *  Print variable that you store in [Example#4]
-      */
+      exec(browserAction("test-action-5").executeFlow(exampleFlow4)),
+        /*
+        *  Print variable that you store in [Example#4]
+        */
       exec(session => {
         println(session("your_args").as[String])
         session
@@ -90,7 +109,7 @@ class BrowserSimulationsScala extends Simulation {
       /*
       *  Clear browserContext on the end of loop
       */
-      exec(browserAction().browserCleanContext())
+      exec(browserCleanContext())
     )
   }
 

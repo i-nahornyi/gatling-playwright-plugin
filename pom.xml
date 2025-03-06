@@ -5,7 +5,7 @@
 
     <groupId>io.github.i-nahornyi</groupId>
     <artifactId>gatling-playwright-plugin</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <packaging>jar</packaging>
 
     <name>gatling-playwright-plugin</name>
@@ -32,7 +32,7 @@
     <scm>
         <connection>scm:git:git://github.com/i-nahornyi/gatling-playwright-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:/i-nahornyi/gatling-playwright-plugin.git</developerConnection>
-        <url>git://github.com/i-nahornyi/gatling-playwright-plugin.git</url>
+        <url>https://github.com/i-nahornyi/gatling-playwright-plugin</url>
     </scm>
 
     <properties>
@@ -54,13 +54,13 @@
             <groupId>io.gatling</groupId>
             <artifactId>gatling-core</artifactId>
             <version>${gatling.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.gatling</groupId>
             <artifactId>gatling-core-java</artifactId>
             <version>${gatling.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.gatling.highcharts</groupId>
@@ -72,13 +72,14 @@
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
             <version>${playwright.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -88,7 +89,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.5.0</version>
+                <version>0.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>ossrh</publishingServerId>

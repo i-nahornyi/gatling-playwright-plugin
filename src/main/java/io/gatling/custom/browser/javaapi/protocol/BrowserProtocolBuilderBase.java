@@ -1,26 +1,26 @@
 package io.gatling.custom.browser.javaapi.protocol;
 
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Browser.NewContextOptions;
+import com.microsoft.playwright.BrowserType.LaunchOptions;
 import io.gatling.custom.browser.protocol.DefaultProtocolOptions;
 
 public class BrowserProtocolBuilderBase {
 
     BrowserProtocolBuilder wrapped;
 
-    BrowserType.LaunchOptions launchOptions = DefaultProtocolOptions.defaultProtocolOptions() ;
-    Browser.NewContextOptions contextOptions = DefaultProtocolOptions.defaultContextOptions();
+    LaunchOptions launchOptions = DefaultProtocolOptions.defaultProtocolOptions() ;
+    NewContextOptions contextOptions = DefaultProtocolOptions.defaultContextOptions();
 
     public BrowserProtocolBuilderBase() {
         this.wrapped = buildProtocol();
     }
 
-    public BrowserProtocolBuilderBase withLaunchOptions(BrowserType.LaunchOptions launchOptions){
+    public BrowserProtocolBuilderBase withLaunchOptions(LaunchOptions launchOptions){
         this.launchOptions = launchOptions;
         return this;
     }
 
-    public BrowserProtocolBuilderBase withContextOptions(Browser.NewContextOptions contextOptions){
+    public BrowserProtocolBuilderBase withContextOptions(NewContextOptions contextOptions){
         this.contextOptions = contextOptions;
         return this;
     }

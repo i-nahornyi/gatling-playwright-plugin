@@ -2,28 +2,33 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.i-nahornyi/gatling-playwright-plugin)](https://central.sonatype.com/artifact/io.github.i-nahornyi/gatling-playwright-plugin)
 
+A **Gatling plugin** for UI performance testing using **Playwright**.
+ 
+_Created with love for Gatling adepts_ ❤️
 
-A simple Gatling plugin for UI performance testing using Playwright.
+## ⚠ Compatibility
+This plugin is currently compatible with **Gatling 3.12.0**.  
+Support for other versions is not guaranteed and may require adjustments.
 
-_`Created with love for Gatling adepts`_
+## 🚀 Getting Started
+Follow the setup instructions in [docs](./docs/README.md).
 
-## Example Simulations
+## 📌 Roadmap
 
-Explore the example simulations written in Java and Scala to see how to use this plugin:
+Planned and completed features:
 
-- [Java Simulation](src/test/java/ui/performance/simulations/BrowserSimulationsJava.java)
-- [Scala Simulation](src/test/scala/ui/performance/simulations/BrowserSimulationsScala.scala)
+✅ Java API  
+✅ Support for Gatling EL in URLs, names, and script blocks  
+⬜ Support for additional browsers (Firefox, Edge, etc.)  
+⬜ Multithreading support  
+⬜ Video recording and screenshots  
+⬜ JavaScript performance measurement polyfill helper  
+⬜ Extended reports with custom metrics (TTFB, LCP, etc.)  
+⬜ Wrapper for UI simulations (abstract class or interface)  
+⬜ Example test cases  
+⬜ Docker image for simplified usage
 
-## TODO List
 
-Here's the current progress and planned features for the plugin:
+## 🤝 Contribution
 
-- [x] Java API
-- [ ] Support for additional browsers (Firefox, Edge, etc.)
-- [ ] Multithreading support
-- [ ] Video recording and screenshots
-- [ ] JS performance measurement polyfill helper
-- [ ] Extended reports with custom metrics (TTFB, LCP, etc.)
-- [ ] Wrapper for UI simulations (abstract class or interface)
-- [ ] Create test cases with examples
-- [ ] Docker image for simplified usage
+Contributions and issue reports from the community are welcome!
