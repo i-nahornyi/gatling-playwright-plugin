@@ -14,12 +14,14 @@ import static io.gatling.javaapi.core.CoreDsl.*;
 public class Smoke extends Simulation {
 
     FeederBuilder<String> pageFeeder = csv("feeders/page.csv").circular();
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Smoke.class);
 
 
     BiFunction<Page, BrowserSession, BrowserSession> scriptedAction = (page, browserSession) -> {
         Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{link.exists()}");
 
-        System.out.println("ActualValue => " + valueFromSession + " | ExpectedValue => true");
+        log.warn("valueFromSession");
+        log.warn("ActualValue => {} | Expected => {}",valueFromSession,true);
 
         Session session = browserSession.getJavaSession().set("user_defined_args", "user_defined_value");
 
@@ -28,12 +30,16 @@ public class Smoke extends Simulation {
         browserSession.setActionStartTime(currentTime);
         browserSession.setActionEndTime(currentTime + 200);
 
-        System.out.println("ActualValue => " + 200 + " | ExpectedValue => " + (browserSession.getActionEndTime() - browserSession.getActionStartTime()) );
+        log.warn("setActionDuration");
+        log.warn("ActualValue => {} | Expected => {}",200,(browserSession.getActionEndTime() - browserSession.getActionStartTime()));
 
 
-        browserSession.setStatusKO("your error message");
+        String errorMessage = "User defined error message";
+        browserSession.setStatusKO(errorMessage);
 
-        System.out.println("ActualValue => " + browserSession.getErrorMessage().get() + " | ExpectedValue => your error message");
+        log.warn("setStatusKoWithMessage");
+        log.warn("ActualValue => {} | Expected => {}",browserSession.getErrorMessage(),errorMessage);
+
 
         return browserSession.updateBrowserSession(session);
     };
@@ -47,11 +53,18 @@ public class Smoke extends Simulation {
                     BrowserDsl.browserAction("#{name}_3").executeFlow(scriptedAction),
                     exec(session -> {
                         String actualValue = session.getString("user_defined_args");
-                        System.out.println("ActualValue => " + actualValue + " | Expected => user_defined_value");
+                        log.warn("scriptedAction");
+                        log.warn("ActualValue => {} | Expected => {}",actualValue,"user_defined_value");
+                        log.warn("sessionShouldBeFailed");
+                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
                         return session;
                     }),
                     BrowserDsl.browserCleanContext(),
-                    exitHere()
+                    exitHereIfFailed(),
+                    exec(session -> {
+                        log.error("This block shouldn't execute");
+                        return session;
+                    })
             );
 
 

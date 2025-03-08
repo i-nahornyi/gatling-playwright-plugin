@@ -33,8 +33,10 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       resolvedUrl <- url(session)
     } yield {
 
+      // Use become original session unmodified
+      var currentSession = session
       this.page = getBrowserContextFromSession(session)
-      logger.debug(s"userID-${session.userId}, execute Open action $resolvedRequestName  --> $resolvedUrl")
+      logger.debug(s"userID-${currentSession.userId}, execute Open action $resolvedRequestName  --> $resolvedUrl")
 
       var isCrashed = false
       var status: Status = OK
@@ -57,13 +59,14 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
         case exception: Exception =>
           logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
           status = KO
-          message = Option.apply("action crashed")
+          message = Option.apply(s"action: $resolvedRequestName crashed")
           isCrashed = true;
       }
       finally {
         val endTime = clock.nowMillis
+        if (status == KO) currentSession = currentSession.markAsFailed
         if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
-        executeNext(session.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
+        executeNext(currentSession.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
       }
     }
 
@@ -85,6 +88,8 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
     resolvedRequestName <- requestName(session)
   } yield {
 
+    // Use become original session unmodified
+    var currentSession = session
     this.page = getBrowserContextFromSession(session)
     logger.debug(s"userID-${session.userId}, execute Flow action $resolvedRequestName")
 
@@ -103,6 +108,7 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
 
     try {
       browserSession = postProcessorFunc.apply(page, browserSession)
+      currentSession = browserSession.getScalaSession()
     }
     catch {
       case assertionFailedError: AssertionFailedError =>
@@ -116,15 +122,16 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
       case exception: Exception =>
         logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
         status = KO
-        message = Option.apply("action crashed")
+        message = Option.apply(s"action: $resolvedRequestName crashed")
         isCrashed = true;
     }
     finally {
       var endTime = clock.nowMillis
       if (browserSession.getActionStartTime != 0) startTime = browserSession.getActionStartTime
       if (browserSession.getActionEndTime != 0) endTime = browserSession.getActionEndTime
+      if (status == KO) currentSession = currentSession.markAsFailed
       if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
-      executeNext(browserSession.getScalaSession().set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
+      executeNext(currentSession.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
     }
   }
 
