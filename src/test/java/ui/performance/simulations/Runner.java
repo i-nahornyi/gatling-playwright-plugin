@@ -9,6 +9,7 @@ public class Runner {
     // MultiUserWorkaround
     // BrowserSimulationsJava
     // BrowserSimulationsScala
+    // FailedSimulation
     // Smoke
 
 
