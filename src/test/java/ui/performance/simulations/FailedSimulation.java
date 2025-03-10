@@ -1,12 +1,13 @@
 package ui.performance.simulations;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.TimeoutError;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
 import io.gatling.custom.browser.model.BrowserSession;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
-import org.opentest4j.AssertionFailedError;
 
 import java.util.function.BiFunction;
 
@@ -18,7 +19,7 @@ public class FailedSimulation extends Simulation {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FailedSimulation.class);
     BiFunction<Page, BrowserSession, BrowserSession> actionMarkedIsKO = (page, browserSession) -> {
 
-        browserSession.setStatusKO("actionMarkedIsKO");
+        browserSession.setStatusKO("status KO with error message set by user");
 
         return browserSession;
     };
@@ -27,7 +28,9 @@ public class FailedSimulation extends Simulation {
     BiFunction<Page, BrowserSession, BrowserSession> throwAssertionFailedError = (page, browserSession) -> {
 
         if (!browserSession.getJavaSession().isFailed()) {
-            throw new AssertionFailedError("throwAssertionFailedError");
+            page.navigate("https://playwright.dev/");
+//            PlaywrightAssertions.assertThat(page.locator("//*[@id=\"__docusaurus\"]/nav")).isDisabled();
+            PlaywrightAssertions.assertThat(page).hasTitle("Error expected title");
         }
         return browserSession;
     };
@@ -35,15 +38,27 @@ public class FailedSimulation extends Simulation {
     BiFunction<Page, BrowserSession, BrowserSession> throwTimeoutError = (page, browserSession) -> {
 
         if (!browserSession.getJavaSession().isFailed()) {
-            throw new TimeoutError("throwTimeoutError");
+            page.navigate("https://playwright.dev/");
+            page.check("#locatorThatNotExist");
         }
         return browserSession;
     };
 
+    BiFunction<Page, BrowserSession, BrowserSession> throwTimeoutError2 = (page, browserSession) -> {
+
+        if (!browserSession.getJavaSession().isFailed()) {
+            page.navigate("https://playwright.dev/");
+            page.locator("//*[@id=\"__docusaurus\"]/nav").waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+        }
+        return browserSession;
+    };
+
+
+
     BiFunction<Page, BrowserSession, BrowserSession> crashAction = (page, browserSession) -> {
 
         if (!browserSession.getJavaSession().isFailed()) {
-            throw new IllegalArgumentException("crashAction");
+            throw new IllegalArgumentException("My text of exception");
         }
         return browserSession;
     };

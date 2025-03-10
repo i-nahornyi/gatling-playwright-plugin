@@ -1,7 +1,8 @@
 package io.gatling.custom.browser.actions
 
 import com.microsoft.playwright.Page.NavigateOptions
-import com.microsoft.playwright.{BrowserContext, Page, PlaywrightException}
+import com.microsoft.playwright.impl.TargetClosedError
+import com.microsoft.playwright.{BrowserContext, Page, PlaywrightException, TimeoutError}
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.commons.util.Clock
 import io.gatling.commons.validation.Validation
@@ -13,6 +14,7 @@ import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
 import io.gatling.custom.browser.model.BrowserSession
 import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
+import io.gatling.custom.browser.utils.PlaywrightExceptionParser
 import org.opentest4j.AssertionFailedError
 
 import java.util.function.BiFunction
@@ -51,21 +53,30 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
         case assertionFailedError: AssertionFailedError =>
           logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
           status = KO
-          message = Option.apply(assertionFailedError.getMessage)
+          message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
+        case timeoutError: TimeoutError =>
+          status = KO
+          message = PlaywrightExceptionParser.parseTimeoutErrorMessage(timeoutError.getMessage)
+        case targetClosedError: TargetClosedError =>
+          logger.error(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
+          status = KO
+          message = Option.apply("Target page, context or browser has been closed")
         case playwrightException: PlaywrightException =>
+          val errorMessages = s"$resolvedRequestName failed with: ${playwrightException.getCause.getClass}"
+          logger.error(errorMessages)
           logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
           status = KO
           message = Option.apply(playwrightException.getMessage)
         case exception: Exception =>
           logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
           status = KO
-          message = Option.apply(s"action: $resolvedRequestName crashed")
+          message = Option.apply(s"crashed with ${exception.getMessage}")
           isCrashed = true;
       }
       finally {
         val endTime = clock.nowMillis
         if (status == KO) currentSession = currentSession.markAsFailed
-        if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
+        if (status == KO && message.isEmpty) message = Option.apply(s"action: $resolvedRequestName marked as KO")
         executeNext(currentSession.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
       }
     }
@@ -114,15 +125,25 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
       case assertionFailedError: AssertionFailedError =>
         logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
         status = KO
-        message = Option.apply(assertionFailedError.getMessage)
+        message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
+      case timeoutError: TimeoutError =>
+        logger.error(s"TimeoutError: $resolvedRequestName ${timeoutError.getMessage}")
+        status = KO
+        message = PlaywrightExceptionParser.parseTimeoutErrorMessage(timeoutError.getMessage)
+      case targetClosedError: TargetClosedError =>
+        logger.error(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
+        status = KO
+        message = Option.apply("Target page, context or browser has been closed")
       case playwrightException: PlaywrightException =>
+        val errorMessages = s"$resolvedRequestName failed with: ${playwrightException.getCause.getClass}"
+        logger.error(errorMessages)
         logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
         status = KO
         message = Option.apply(playwrightException.getMessage)
       case exception: Exception =>
         logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
         status = KO
-        message = Option.apply(s"action: $resolvedRequestName crashed")
+        message = Option.apply(s"crashed with ${exception.getMessage}")
         isCrashed = true;
     }
     finally {
@@ -130,7 +151,7 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
       if (browserSession.getActionStartTime != 0) startTime = browserSession.getActionStartTime
       if (browserSession.getActionEndTime != 0) endTime = browserSession.getActionEndTime
       if (status == KO) currentSession = currentSession.markAsFailed
-      if (status == KO && message.isEmpty) message = Option.apply("action: " + requestName + "marked KO")
+      if (status == KO && message.isEmpty) message = Option.apply(s"action: $resolvedRequestName marked as KO")
       executeNext(currentSession.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
     }
   }
