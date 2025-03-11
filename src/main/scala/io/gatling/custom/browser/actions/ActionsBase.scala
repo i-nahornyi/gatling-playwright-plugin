@@ -15,25 +15,50 @@ trait ActionsBase extends StrictLogging {
 
   val ctx: ScenarioContext
   private val browserComponent = ctx.protocolComponentsRegistry.components(BrowserProtocol.browserProtocolKey)
-  private val browserInstances: Browser = browserComponent.browser
+  private val browserInstance: Browser = browserComponent.browserInstance
   val browserContextsPool: mutable.Map[Long, BrowserContext] = browserComponent.browserContextsPool
   val contextOptions: Browser.NewContextOptions = browserComponent.contextOptions
 
-  protected def getBrowserContextFromSession(session: Session): Page = {
+  protected def getBrowserContextFromSession(session: Session): (Page,Session) = {
 
     val userID = session.userId
 
     if (browserContextsPool.contains(userID)) {
-      logger.debug(s"browserContextPool contains context for userID-$userID")
-      session(BROWSER_CONTEXT_KEY).as[Page]
+
+      var browserContext = browserContextsPool(session.userId)
+
+      // Check browser is browser open
+      if(!checkIsBrowserOpen(browserContext)){
+        logger.trace(s"browserContextPool contains context for userID-$userID, but browser was closed, create new instance")
+        browserComponent.recreateBrowserInstance()
+      }
+      // Check page is closed
+      if(!checkIsContextHaveActivePage(browserContext)){
+        logger.trace(s"browserContextPool contains context for userID-$userID, but page was closed, create new instance")
+        browserContext = browserInstance.newContext(contextOptions)
+        browserContextsPool.put(userID,browserContext)
+        val page = browserContext.newPage()
+        return (page , session.set(BROWSER_CONTEXT_KEY,page))
+      }
+
+      logger.trace(s"browserContextPool contains context for userID-$userID")
+      (session(BROWSER_CONTEXT_KEY).as[Page] , session)
+
     } else {
-      logger.debug(s"browserContextPool doesn't contains context for userID-$userID, create new")
-      val browserContext: BrowserContext = browserInstances.newContext(contextOptions)
+      logger.trace(s"browserContextPool doesn't contains context for userID-$userID, create new")
+      val browserContext = browserInstance.newContext(contextOptions)
       browserContextsPool.put(userID, browserContext)
       val page = browserContext.newPage()
-      session.set(BROWSER_CONTEXT_KEY, page)
-      page
+      (page, session.set(BROWSER_CONTEXT_KEY, page))
     }
+  }
+
+  private def checkIsBrowserOpen(browserContext: BrowserContext): Boolean = {
+    browserContext.browser().isConnected
+  }
+
+  private def checkIsContextHaveActivePage(browserContext: BrowserContext): Boolean = {
+    browserContext.pages().size() > 0
   }
 
   protected def executeNext(

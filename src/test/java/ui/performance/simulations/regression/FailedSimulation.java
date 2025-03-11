@@ -1,4 +1,4 @@
-package ui.performance.simulations;
+package ui.performance.simulations.regression;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;

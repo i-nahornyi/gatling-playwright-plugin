@@ -1,4 +1,4 @@
-package ui.performance.simulations;
+package ui.performance.simulations.regression;
 
 import com.microsoft.playwright.Page;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
@@ -38,7 +38,7 @@ public class Smoke extends Simulation {
         browserSession.setStatusKO(errorMessage);
 
         log.warn("setStatusKoWithMessage");
-        log.warn("ActualValue => {} | Expected => {}",browserSession.getErrorMessage(),errorMessage);
+        log.warn("ActualValue => {} | Expected => {}",browserSession.getErrorMessage().get(), errorMessage);
 
 
         return browserSession.updateBrowserSession(session);

@@ -35,10 +35,12 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       resolvedUrl <- url(session)
     } yield {
 
+      val getBrowserAndSession = getBrowserContextFromSession(session)
       // Use become original session unmodified
-      var currentSession = session
-      this.page = getBrowserContextFromSession(session)
-      logger.debug(s"userID-${currentSession.userId}, execute Open action $resolvedRequestName  --> $resolvedUrl")
+      var currentSession = getBrowserAndSession._2
+      this.page = getBrowserAndSession._1
+
+      logger.trace(s"userID-${currentSession.userId}, execute Open action $resolvedRequestName  --> $resolvedUrl")
 
       var isCrashed = false
       var status: Status = OK
@@ -51,19 +53,19 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       }
       catch {
         case assertionFailedError: AssertionFailedError =>
-          logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
+          logger.debug(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
           status = KO
           message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
         case targetClosedError: TargetClosedError =>
-          logger.error(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
+          logger.debug(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
           status = KO
           message = Option.apply("Target page, context or browser has been closed")
         case playwrightException: PlaywrightException =>
-          logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
+          logger.debug(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
           status = KO
           message = PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName)
         case exception: Exception =>
-          logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
+          logger.debug(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
           status = KO
           message = Option.apply(s"crashed with ${exception.getMessage}")
           isCrashed = true;
@@ -94,10 +96,11 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
     resolvedRequestName <- requestName(session)
   } yield {
 
+    val getBrowserAndSession = getBrowserContextFromSession(session)
     // Use become original session unmodified
-    var currentSession = session
-    this.page = getBrowserContextFromSession(session)
-    logger.debug(s"userID-${session.userId}, execute Flow action $resolvedRequestName")
+    var currentSession = getBrowserAndSession._2
+    this.page = getBrowserAndSession._1
+    logger.trace(s"userID-${session.userId}, execute Flow action $resolvedRequestName")
 
     var isCrashed = false
     var status: Status = OK
@@ -109,7 +112,7 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
       result
     })
 
-    var browserSession: BrowserSession = new BrowserSession(session)
+    var browserSession: BrowserSession = new BrowserSession(currentSession)
     var startTime = clock.nowMillis
 
     try {
@@ -118,20 +121,19 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
     }
     catch {
       case assertionFailedError: AssertionFailedError =>
-        logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
+        logger.debug(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
         status = KO
         message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
       case targetClosedError: TargetClosedError =>
-        logger.error(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
+        logger.debug(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
         status = KO
         message = Option.apply("Target page, context or browser has been closed")
       case playwrightException: PlaywrightException =>
-        logger.error(playwrightException.getClass.getSimpleName)
-        logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
+        logger.debug(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
         status = KO
         message = PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName)
       case exception: Exception =>
-        logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
+        logger.debug(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
         status = KO
         message = Option.apply(s"crashed with ${exception.getMessage}")
         isCrashed = true;
@@ -162,15 +164,15 @@ case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extend
 
     val userId = session.userId
 
-    logger.debug(s"userID-$userId, execute ClearContext action")
+    logger.trace(s"userID-$userId, execute ClearContext action")
 
     if (session.contains(BROWSER_CONTEXT_KEY)){
 
       session(BROWSER_CONTEXT_KEY).as[Page].context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
-      logger.debug(s"userID-$userId, remove BrowserContext from BrowserContextPool")
+      logger.trace(s"userID-$userId, remove BrowserContext from BrowserContextPool")
       browserContextsPool.remove(userId)
 
-      logger.debug(s"userID-$userId, remove BrowserContext from session")
+      logger.trace(s"userID-$userId, remove BrowserContext from session")
       next ! session.remove(BROWSER_CONTEXT_KEY)
     }
     else {

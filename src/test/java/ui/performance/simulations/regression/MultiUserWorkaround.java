@@ -1,4 +1,4 @@
-package ui.performance.simulations;
+package ui.performance.simulations.regression;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
@@ -36,7 +36,7 @@ public class MultiUserWorkaround extends Simulation {
 
     {
         List<PopulationBuilder> simmulationList = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             simmulationList.add(scenario("scenario_"+i).exec(flow).injectOpen(OpenInjectionStep.atOnceUsers(1)));
         }
         setUp(simmulationList).protocols(browserProtocol);
