@@ -18,18 +18,24 @@ public class FailedSimulation extends Simulation {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FailedSimulation.class);
     BiFunction<Page, BrowserSession, BrowserSession> actionMarkedIsKO = (page, browserSession) -> {
-
         browserSession.setStatusKO("status KO with error message set by user");
-
         return browserSession;
     };
 
+
+    BiFunction<Page, BrowserSession, BrowserSession> throwAssertionFailedErrorWithExpected = (page, browserSession) -> {
+
+        if (!browserSession.getJavaSession().isFailed()) {
+            page.navigate("https://playwright.dev/");
+            PlaywrightAssertions.assertThat(page.locator("//*[@id=\"__docusaurus\"]/nav")).isDisabled();
+        }
+        return browserSession;
+    };
 
     BiFunction<Page, BrowserSession, BrowserSession> throwAssertionFailedError = (page, browserSession) -> {
 
         if (!browserSession.getJavaSession().isFailed()) {
             page.navigate("https://playwright.dev/");
-//            PlaywrightAssertions.assertThat(page.locator("//*[@id=\"__docusaurus\"]/nav")).isDisabled();
             PlaywrightAssertions.assertThat(page).hasTitle("Error expected title");
         }
         return browserSession;
@@ -49,6 +55,33 @@ public class FailedSimulation extends Simulation {
         if (!browserSession.getJavaSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             page.locator("//*[@id=\"__docusaurus\"]/nav").waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+        }
+        return browserSession;
+    };
+
+    BiFunction<Page, BrowserSession, BrowserSession> throwDriverException = (page, browserSession) -> {
+
+        if (!browserSession.getJavaSession().isFailed()) {
+            page.navigate("https://playwright.dev/");
+            page.evaluate("var e = badJsExpression");
+        }
+        return browserSession;
+    };
+
+    BiFunction<Page, BrowserSession, BrowserSession> throwDriverException2 = (page, browserSession) -> {
+
+        if (!browserSession.getJavaSession().isFailed()) {
+            page.navigate("https://playwright.dev/");
+            page.evaluate("return badJsExpression");
+        }
+        return browserSession;
+    };
+
+    BiFunction<Page, BrowserSession, BrowserSession> throwClosedError = (page, browserSession) -> {
+
+        if (!browserSession.getJavaSession().isFailed()) {
+            page.close();
+            page.navigate("https://playwright.dev/");
         }
         return browserSession;
     };
@@ -74,7 +107,7 @@ public class FailedSimulation extends Simulation {
                         return session.markAsSucceeded();
                     }),
                     pause(1),
-                    BrowserDsl.browserAction("LinkFailedOpen").open("https://docs.gatling1.io/"),
+                    BrowserDsl.browserAction("throwDriverException").open("https://docs.gatling1.io/"),
                     pause(1),
                     exec(session -> {
                         log.warn("LinkFailedOpen");
@@ -97,11 +130,43 @@ public class FailedSimulation extends Simulation {
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
+                    BrowserDsl.browserAction("throwAssertionFailedError").executeFlow(throwAssertionFailedErrorWithExpected),
+                    exec(session -> {
+                        log.warn("throwAssertionFailedError");
+                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
+                        /// Reset session
+                        return session.markAsSucceeded();
+                    }),
                     BrowserDsl.browserAction("throwTimeoutError").executeFlow(throwTimeoutError),
                     exec(session -> {
                         log.warn("throwTimeoutError");
                         log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
                         /// Reset session
+                        return session.markAsSucceeded();
+                    }),
+                    BrowserDsl.browserAction("throwTimeoutError").executeFlow(throwTimeoutError2),
+                    exec(session -> {
+                        log.warn("throwTimeoutError");
+                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
+                        /// Reset session
+                        return session.markAsSucceeded();
+                    }),
+                    BrowserDsl.browserAction("throwDriverException").executeFlow(throwDriverException),
+                    exec(session -> {
+                        log.warn("throwDriverException");
+                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
+                        return session.markAsSucceeded();
+                    }),
+                    BrowserDsl.browserAction("throwDriverException").executeFlow(throwDriverException2),
+                    exec(session -> {
+                        log.warn("throwDriverException");
+                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
+                        return session.markAsSucceeded();
+                    }),
+                    BrowserDsl.browserAction("throwClosedError").executeFlow(throwClosedError),
+                    exec(session -> {
+                        log.warn("throwClosedError");
+                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("crashAction").executeFlow(crashAction),
@@ -121,7 +186,7 @@ public class FailedSimulation extends Simulation {
     {
         setUp(mainScenario.injectOpen(atOnceUsers(1))).assertions(
                 global().successfulRequests().count().is(0L),
-                global().failedRequests().count().is(4L)
+                global().failedRequests().count().is(9L)
         );
     }
 }

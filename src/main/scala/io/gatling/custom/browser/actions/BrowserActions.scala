@@ -54,19 +54,14 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
           logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
           status = KO
           message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
-        case timeoutError: TimeoutError =>
-          status = KO
-          message = PlaywrightExceptionParser.parseTimeoutErrorMessage(timeoutError.getMessage)
         case targetClosedError: TargetClosedError =>
           logger.error(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
           status = KO
           message = Option.apply("Target page, context or browser has been closed")
         case playwrightException: PlaywrightException =>
-          val errorMessages = s"$resolvedRequestName failed with: ${playwrightException.getCause.getClass}"
-          logger.error(errorMessages)
           logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
           status = KO
-          message = Option.apply(playwrightException.getMessage)
+          message = PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName)
         case exception: Exception =>
           logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
           status = KO
@@ -126,20 +121,15 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
         logger.error(s"AssertionFailedError: $resolvedRequestName ${assertionFailedError.getMessage}")
         status = KO
         message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
-      case timeoutError: TimeoutError =>
-        logger.error(s"TimeoutError: $resolvedRequestName ${timeoutError.getMessage}")
-        status = KO
-        message = PlaywrightExceptionParser.parseTimeoutErrorMessage(timeoutError.getMessage)
       case targetClosedError: TargetClosedError =>
         logger.error(s"TargetClosedError: $resolvedRequestName ${targetClosedError.getMessage}")
         status = KO
         message = Option.apply("Target page, context or browser has been closed")
       case playwrightException: PlaywrightException =>
-        val errorMessages = s"$resolvedRequestName failed with: ${playwrightException.getCause.getClass}"
-        logger.error(errorMessages)
+        logger.error(playwrightException.getClass.getSimpleName)
         logger.error(s"PlaywrightException: $resolvedRequestName ${playwrightException.getMessage}")
         status = KO
-        message = Option.apply(playwrightException.getMessage)
+        message = PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName)
       case exception: Exception =>
         logger.error(s"Browser action crashed: $resolvedRequestName ${exception.getMessage}")
         status = KO
