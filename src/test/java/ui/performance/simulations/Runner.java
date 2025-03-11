@@ -15,7 +15,7 @@ public class Runner {
 
     public static void main(String[] args) {
         String [] runParams = new String[]{
-                GatlingCliOptions.Simulation.shortOption(),"ui.performance.simulations.Smoke",
+                GatlingCliOptions.Simulation.shortOption(),"ui.performance.simulations.FailedSimulation",
                 GatlingCliOptions.ResultsFolder.shortOption(), "target/gatling"
         };
 
