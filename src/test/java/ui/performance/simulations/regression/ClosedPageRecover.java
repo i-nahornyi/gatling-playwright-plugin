@@ -16,6 +16,8 @@ import static io.gatling.javaapi.core.CoreDsl.*;
 @SuppressWarnings("unused")
 public class ClosedPageRecover extends Simulation {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FailedSimulation.class);
+
     ProtocolBuilder browserProtocol = BrowserDsl
             .gatlingBrowser()
             //// This part of setup block is optional
@@ -37,6 +39,7 @@ public class ClosedPageRecover extends Simulation {
             .exec(
                     BrowserDsl.browserAction("SuccessAction").open("https://gatling.io/"),
                     pause(1),
+                    exec(session -> session.set("testValue","testValue")),
                     BrowserDsl.browserAction("FailedAction").executeFlow((page, browserSession) -> {
                         page.close();
                         page.check("#main-content");
@@ -49,7 +52,12 @@ public class ClosedPageRecover extends Simulation {
                         page.check("#main-content");
                         return browserSession;
                     }),
-                    BrowserDsl.browserAction("SuccessAction").open("https://gatling.io/")
+                    BrowserDsl.browserAction("SuccessAction").open("https://gatling.io/"),
+                    exec(session -> {
+                        log.warn(session.getString("testValue"));
+                        return session;
+                    }),
+                    crashLoadGeneratorIf(session -> "testValue lost", session -> !session.contains("testValue"))
             );
 
 
