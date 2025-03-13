@@ -8,15 +8,16 @@ import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
 
 import scala.collection.concurrent.TrieMap
 
-case class BrowserComponent(playwright: Playwright, browser: Browser, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions)
+case class BrowserComponent(playwright: Playwright, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions)
   extends ProtocolComponents with StrictLogging {
 
 
   var browserContextsPool: TrieMap[Long, BrowserContext] = TrieMap.empty[Long, BrowserContext]
+  var browserInstance: Browser = playwright.chromium().launch(launchOptions)
 
   override def onStart: Session => Session = session => {
 
-    val browserContext = browser.newContext(contextOptions)
+    val browserContext = browserInstance.newContext(contextOptions)
     browserContextsPool.put(session.userId, browserContext)
     session.set(BROWSER_CONTEXT_KEY, browserContext.newPage())
   }
@@ -27,5 +28,10 @@ case class BrowserComponent(playwright: Playwright, browser: Browser, launchOpti
       browserContextsPool(userId).close(new BrowserContext.CloseOptions().setReason("Closing due to onExit hook"))
       browserContextsPool.remove(userId)
     }
+  }
+
+
+  def recreateBrowserInstance(): Unit = {
+    browserInstance = playwright.chromium().launch(launchOptions)
   }
 }

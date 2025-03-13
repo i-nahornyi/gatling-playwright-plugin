@@ -9,14 +9,16 @@
 	</appender>
 
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>log/tests.log</file>
+		<file>target/log/tests.log</file>
 		<append>false</append>
 		<encoder>
 			<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
 		</encoder>
 	</appender>
 
-	<logger name="io.gatling.custom.browser" level="DEBUG" />
+	<!-- uncomment and set to DEBUG to log all browserActions error -->
+	<!-- uncomment and set to TRACE to log all browserActions -->
+	<logger name="io.gatling.custom.browser" level="TRACE" />
 
 	<!-- uncomment and set to DEBUG to log all failing HTTP requests -->
 	<!-- uncomment and set to TRACE to log all HTTP requests -->

@@ -1,4 +1,4 @@
-package ui.performance.simulations;
+package ui.performance.simulations.regression;
 
 import io.gatling.custom.browser.javaapi.BrowserDsl;
 import io.gatling.javaapi.core.CoreDsl;

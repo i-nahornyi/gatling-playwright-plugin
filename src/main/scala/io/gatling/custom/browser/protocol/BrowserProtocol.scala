@@ -20,15 +20,15 @@ object BrowserProtocol extends StrictLogging {
 
     override def newComponents(coreComponents: CoreComponents): BrowserProtocol => BrowserComponent = browserProtocol => {
       val playwright: Playwright = Playwright.create()
-      val browserInstance: Browser = playwright.chromium().launch(browserProtocol.options)
+      val browserComponent = BrowserComponent(playwright, browserProtocol.options, browserProtocol.contextOptions)
 
       coreComponents.actorSystem.registerOnTermination({
-        logger.debug("Received termination signal; closing browser and Playwright instances.")
-        browserInstance.close(new Browser.CloseOptions().setReason("Received termination signal from Gatling."))
+        logger.trace("Received termination signal; closing browser and Playwright instances.")
+        browserComponent.browserInstance.close(new Browser.CloseOptions().setReason("Received termination signal from Gatling."))
         playwright.close()
       })
 
-      BrowserComponent(playwright,browserInstance, browserProtocol.options, browserProtocol.contextOptions)
+      browserComponent
     }
   }
 }
