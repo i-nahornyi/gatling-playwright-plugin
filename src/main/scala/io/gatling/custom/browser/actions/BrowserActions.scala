@@ -2,7 +2,7 @@ package io.gatling.custom.browser.actions
 
 import com.microsoft.playwright.Page.NavigateOptions
 import com.microsoft.playwright.impl.TargetClosedError
-import com.microsoft.playwright.{BrowserContext, Page, PlaywrightException, TimeoutError}
+import com.microsoft.playwright.{BrowserContext, Page, PlaywrightException}
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.commons.util.Clock
 import io.gatling.commons.validation.Validation
@@ -49,7 +49,7 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       val startTime = clock.nowMillis
 
       try {
-        if(options == null) page.navigate(resolvedUrl) else page.navigate(resolvedUrl,options)
+        if (options == null) page.navigate(resolvedUrl) else page.navigate(resolvedUrl, options)
       }
       catch {
         case assertionFailedError: AssertionFailedError =>
@@ -97,7 +97,7 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
   } yield {
 
     val getBrowserAndSession = getBrowserContextFromSession(session)
-    // Use become original session unmodified
+    // Use because original session unmodified
     var currentSession = getBrowserAndSession._2
     this.page = getBrowserAndSession._1
     logger.trace(s"userID-${session.userId}, execute Flow action $resolvedRequestName")
@@ -153,6 +153,57 @@ case class BrowserActionExecuteFlow(actionName: Expression[String], function: Bi
   override def requestName: Expression[String] = actionName
 }
 
+case class BrowserActionsSessionFunction(function: BiFunction[Page, BrowserSession, BrowserSession], ctx: ScenarioContext, next: Action) extends ChainableAction with NameGen with ActionsBase {
+  var page: Page = _
+
+  override def statsEngine: StatsEngine = ctx.coreComponents.statsEngine
+
+  override def name: String = genName("browserSessionFunction")
+
+  override protected def execute(session: Session): Unit = {
+
+    val getBrowserAndSession = getBrowserContextFromSession(session)
+    // Use because original session unmodified
+    var currentSession = getBrowserAndSession._2
+    this.page = getBrowserAndSession._1
+    var status: Status = OK
+    var message: Option[String] = Option.empty
+
+    var browserSession = new BrowserSession(currentSession)
+    try {
+      browserSession = function.apply(page, browserSession)
+      currentSession = browserSession.getScalaSession()
+      status = browserSession.getStatus
+    }
+    catch {
+      case assertionFailedError: AssertionFailedError =>
+        message = PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage)
+        logger.error(s"'$name' failed to execute: $message")
+        logger.trace(s"AssertionFailedError: $name ${assertionFailedError.getMessage}")
+        status = KO
+      case targetClosedError: TargetClosedError =>
+        message = Option.apply("Target page, context or browser has been closed")
+        logger.error(s"'$name' failed to execute: $message")
+        logger.trace(s"TargetClosedError: $name ${targetClosedError.getMessage}")
+        status = KO
+      case playwrightException: PlaywrightException =>
+        message = PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName)
+        logger.error(s"'$name' failed to execute: $message")
+        logger.trace(s"PlaywrightException: $name ${playwrightException.getMessage}")
+        status = KO
+      case exception: Exception =>
+        logger.error(s"'$name' failed to execute: ${exception.getMessage}")
+        logger.trace(s"Browser action crashed: $name ${exception.getMessage}")
+        status = KO
+    }
+    finally {
+      if (status == KO) currentSession = currentSession.markAsFailed
+      next ! currentSession.set(BROWSER_CONTEXT_KEY, page)
+    }
+  }
+
+}
+
 case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extends ChainableAction with NameGen with ActionsBase {
   var page: Page = _
 
@@ -166,7 +217,7 @@ case class BrowserActionsClearContext(ctx: ScenarioContext, next: Action) extend
 
     logger.trace(s"userID-$userId, execute ClearContext action")
 
-    if (session.contains(BROWSER_CONTEXT_KEY)){
+    if (session.contains(BROWSER_CONTEXT_KEY)) {
 
       session(BROWSER_CONTEXT_KEY).as[Page].context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
       logger.trace(s"userID-$userId, remove BrowserContext from BrowserContextPool")

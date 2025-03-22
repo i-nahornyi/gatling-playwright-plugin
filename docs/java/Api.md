@@ -60,6 +60,19 @@ BrowserDsl.browserAction("test").executeFlow((page, browserSession) -> {
 
 For **advanced** example see [this guide](./FlowActionAdvanced.md)
 
+## Browser Session Function
+
+Allows manipulation of a page without tracking it in reports.
+
+**Note:** Typically used to extract data and store it in Gatling sessions.
+
+```java
+BrowserDsl.browserSessionFunction((page, browserSession) -> {
+    Session session = browserSession.getJavaSession().set("pageTitle", page.title());
+    return browserSession.updateBrowserSession(session);
+});
+```
+
 ## Clean Context
 
 Provides a way to clean up the Playwright `BrowserContext`.

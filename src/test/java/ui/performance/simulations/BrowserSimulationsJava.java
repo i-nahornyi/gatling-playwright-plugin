@@ -78,6 +78,13 @@ public class BrowserSimulationsJava extends Simulation {
         return browserSession.updateBrowserSession(session);
     };
 
+    //// [Example#5] How to execute browserSessionFunction
+    BiFunction<Page, BrowserSession, BrowserSession> exampleBrowserSessionFunction = (page, browserSession) -> {
+        Session session = browserSession.getJavaSession().set("pageTitle", page.title());
+
+        return browserSession.updateBrowserSession(session);
+    };
+
 
     ScenarioBuilder mainScenario = scenario("test").repeat(1).on(
             group("flow-a").on(
@@ -86,6 +93,10 @@ public class BrowserSimulationsJava extends Simulation {
                      *  You can use EL syntax for action name and url
                      */
                     exec(BrowserDsl.browserAction("#{actionName}").open("#{url}")),
+                    /*
+                     *  You can execute some script that not tracking in report
+                     */
+                    exec(BrowserDsl.browserSessionFunction(exampleBrowserSessionFunction)),
                     pause(1, 5),
                     exec(BrowserDsl.browserAction(session -> session.getString("actionName")).open(session -> session.getString("url"))),
                     pause(1, 5),

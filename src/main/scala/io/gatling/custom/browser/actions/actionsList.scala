@@ -19,7 +19,6 @@ object actionsList {
 
     def executeFlow(function: BiFunction[Page, BrowserSession, BrowserSession]): BrowserActionsExecuteFlowBuilder = BrowserActionsExecuteFlowBuilder(requestName, function)
 
-    def browserCleanContext(): BrowserClearActionsBuilder = BrowserClearActionsBuilder()
   }
 
   case class BrowserActionsOpenBuilder(requestName: Expression[String], url: Expression[String], navigateOptions: NavigateOptions) extends ActionBuilder {
@@ -28,6 +27,10 @@ object actionsList {
 
   case class BrowserActionsExecuteFlowBuilder(requestName: Expression[String], function: BiFunction[Page, BrowserSession, BrowserSession]) extends ActionBuilder {
     override def build(ctx: ScenarioContext, next: Action): Action = BrowserActionExecuteFlow(requestName, function, ctx, next)
+  }
+
+  case class BrowserSessionFunctionActionsBuilder(function: BiFunction[Page, BrowserSession, BrowserSession]) extends ActionBuilder {
+    override def build(ctx: ScenarioContext, next: Action): Action = BrowserActionsSessionFunction(function, ctx, next)
   }
 
   case class BrowserClearActionsBuilder() extends ActionBuilder {
