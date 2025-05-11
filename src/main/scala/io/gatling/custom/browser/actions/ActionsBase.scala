@@ -18,6 +18,7 @@ trait ActionsBase extends StrictLogging {
   private val browserInstance: Browser = browserComponent.browserInstance
   val browserContextsPool: mutable.Map[Long, BrowserContext] = browserComponent.browserContextsPool
   val contextOptions: Browser.NewContextOptions = browserComponent.contextOptions
+  val enableUIMetrics: Boolean = browserComponent.enableUIMetrics
 
   protected def getBrowserContextFromSession(session: Session): (Page,Session) = {
 

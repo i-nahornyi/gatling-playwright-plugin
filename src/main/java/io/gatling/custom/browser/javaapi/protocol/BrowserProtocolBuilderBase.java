@@ -10,6 +10,7 @@ public class BrowserProtocolBuilderBase {
 
     LaunchOptions launchOptions = DefaultProtocolOptions.defaultProtocolOptions() ;
     NewContextOptions contextOptions = DefaultProtocolOptions.defaultContextOptions();
+    Boolean webVitalsEnable = DefaultProtocolOptions.defaultWebVitalsEnable();
 
     public BrowserProtocolBuilderBase() {
         this.wrapped = buildProtocol();
@@ -24,9 +25,13 @@ public class BrowserProtocolBuilderBase {
         this.contextOptions = contextOptions;
         return this;
     }
+    public BrowserProtocolBuilderBase enableUIMetrics(Boolean webVitalsEnable){
+        this.webVitalsEnable = webVitalsEnable;
+        return this;
+    }
 
     public BrowserProtocolBuilder buildProtocol(){
-        return new BrowserProtocolBuilder(new io.gatling.custom.browser.protocol.BrowserProtocolBuilder(launchOptions,contextOptions));
+        return new BrowserProtocolBuilder(new io.gatling.custom.browser.protocol.BrowserProtocolBuilder(launchOptions,contextOptions, webVitalsEnable));
     }
 
 }

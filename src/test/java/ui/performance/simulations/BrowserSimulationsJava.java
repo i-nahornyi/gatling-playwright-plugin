@@ -22,7 +22,8 @@ public class BrowserSimulationsJava extends Simulation {
             .gatlingBrowser()
             //// This part of setup block is optional
             .withLaunchOptions(new LaunchOptions().setHeadless(false))
-            .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
+            .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(false))
+            .enableUIMetrics(false)
             ////
             .buildProtocol();
 

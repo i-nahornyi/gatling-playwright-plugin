@@ -21,6 +21,7 @@ class BrowserSimulationsScala extends Simulation {
     //// This part of setup block is optional
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
+    .enableUIMetrics(false)
     ////
     .build()
 

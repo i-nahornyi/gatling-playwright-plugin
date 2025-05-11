@@ -14,7 +14,7 @@ import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
 import io.gatling.custom.browser.model.BrowserSession
 import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
-import io.gatling.custom.browser.utils.PlaywrightExceptionParser
+import io.gatling.custom.browser.utils.{PerformanceUIHelper, PlaywrightExceptionParser}
 import org.opentest4j.AssertionFailedError
 
 import java.util.function.BiFunction
@@ -46,6 +46,7 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
       var status: Status = OK
       var message: Option[String] = Option.empty
 
+      if(enableUIMetrics) PerformanceUIHelper.injectUIPolyfill(page)
       val startTime = clock.nowMillis
 
       try {
@@ -74,6 +75,7 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
         val endTime = clock.nowMillis
         if (status == KO) currentSession = currentSession.markAsFailed
         if (status == KO && message.isEmpty) message = Option.apply(s"action: $resolvedRequestName marked as KO")
+        if (enableUIMetrics && status != KO) PerformanceUIHelper.reportUIMetrics(startTime, resolvedRequestName, page)
         executeNext(currentSession.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
       }
     }

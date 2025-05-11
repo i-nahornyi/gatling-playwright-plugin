@@ -7,5 +7,6 @@ object DefaultProtocolOptions {
 
   var defaultProtocolOptions: LaunchOptions = new LaunchOptions().setHeadless(false)
   var defaultContextOptions: NewContextOptions = new NewContextOptions().setViewportSize(1920, 1080)
+  var defaultWebVitalsEnable: Boolean = false
 
 }
