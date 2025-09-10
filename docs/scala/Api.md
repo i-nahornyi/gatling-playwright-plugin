@@ -15,8 +15,9 @@ val browserProtocol: Protocol = gatlingBrowser
     //// This part of setup block is optional
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
+    .enableUIMetrics()
     ////
-    .build()
+    .buildProtocol()
 ```
 
 ## Action name

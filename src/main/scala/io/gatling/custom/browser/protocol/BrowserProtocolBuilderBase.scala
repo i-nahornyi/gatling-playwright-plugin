@@ -15,8 +15,8 @@ final case class BrowserProtocolBuilder(launchOptions: LaunchOptions = DefaultPr
                                         contextOptions: NewContextOptions = DefaultProtocolOptions.defaultContextOptions,
                                         webVitalsEnable: Boolean = DefaultProtocolOptions.defaultWebVitalsEnable) {
 
-  implicit def build(): Protocol = BrowserProtocol(launchOptions, contextOptions, webVitalsEnable)
+  implicit def buildProtocol(): Protocol = BrowserProtocol(launchOptions, contextOptions, webVitalsEnable)
   def withLaunchOptions(launchOptions: LaunchOptions): BrowserProtocolBuilder = copy(launchOptions = launchOptions)
   def withContextOptions(contextOptions: NewContextOptions): BrowserProtocolBuilder = copy(contextOptions = contextOptions)
-  def enableUIMetrics(webVitalsEnable: Boolean): BrowserProtocolBuilder = copy(webVitalsEnable = webVitalsEnable)
+  def enableUIMetrics(): BrowserProtocolBuilder = copy(webVitalsEnable = true)
 }

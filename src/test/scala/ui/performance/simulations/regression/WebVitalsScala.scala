@@ -14,8 +14,9 @@ class WebVitalsScala extends Simulation {
   val browserProtocol: Protocol = gatlingBrowser
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
-    .enableUIMetrics(true)
-    .build()
+
+    .enableUIMetrics()
+    .buildProtocol()
 
   def mainScenario: ScenarioBuilder = scenario("test").repeat(5)(
     exec(browserAction("homePage").open("https://ecomm.gatling.io/", new Page.NavigateOptions().setWaitUntil(NETWORKIDLE))),

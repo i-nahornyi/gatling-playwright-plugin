@@ -18,7 +18,7 @@ public class WebVitalsJava extends Simulation {
             .gatlingBrowser()
             .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(true))
             .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
-            .enableUIMetrics(true)
+            .enableUIMetrics()
             .buildProtocol();
 
     ScenarioBuilder mainScenario = scenario("test").repeat(5).on(

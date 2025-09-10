@@ -11,6 +11,7 @@ ProtocolBuilder browserProtocol = BrowserDsl
         // Optional setup block
         .withLaunchOptions(new LaunchOptions().setHeadless(false))
         .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
+        .enableUIMetrics()
         //
         .buildProtocol();
 ```

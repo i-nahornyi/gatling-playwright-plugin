@@ -25,8 +25,8 @@ public class BrowserProtocolBuilderBase {
         this.contextOptions = contextOptions;
         return this;
     }
-    public BrowserProtocolBuilderBase enableUIMetrics(Boolean webVitalsEnable){
-        this.webVitalsEnable = webVitalsEnable;
+    public BrowserProtocolBuilderBase enableUIMetrics(){
+        this.webVitalsEnable = true;
         return this;
     }
 

@@ -17,9 +17,9 @@ public class Runner {
 
 
     public static void main(String[] args) {
-        String [] runParams = new String[]{
-                GatlingCliOptions.Simulation.shortOption(),"ui.performance.simulations.regression.WebVitalsJava",
-                GatlingCliOptions.RunDescription.shortOption(), "Custom descriptions for test-%d".formatted(System.currentTimeMillis()),
+        String[] runParams = new String[]{
+                GatlingCliOptions.Simulation.shortOption(), "ui.performance.simulations.regression.Smoke",
+                GatlingCliOptions.RunDescription.shortOption(), "Custom descriptions for test-" + System.currentTimeMillis(),
                 GatlingCliOptions.ResultsFolder.shortOption(), "target/gatling"
         };
 

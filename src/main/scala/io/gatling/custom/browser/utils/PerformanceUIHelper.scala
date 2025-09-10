@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.playwright.Page
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.commons.validation.Success
+import io.gatling.core.Predef.Status
 import io.gatling.core.util.ResourceCache
 
 import java.nio.charset.Charset
@@ -21,8 +22,7 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
     page.addInitScript(UI_OBSERVER_JS)
   }
 
-  /// TODO: refactor in future
-  def reportUIMetrics(timestamp: Long, requestName: String, page: Page): Unit = {
+  def reportUIMetrics(timestamp: Long, requestName: String, page: Page, status: Status): Unit = {
 
     /*
           "FCP" -> {Integer@6833} 233
@@ -34,8 +34,7 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
     */
     val metricsJsonString = page.evaluate("JSON.stringify(getPerformanceMetrics())").asInstanceOf[String]
     val metricsMap = objectMapper.readValue(metricsJsonString, classOf[util.HashMap[String, AnyVal]])
-    metricsMap.forEach((key, value) => logger.info(s"WEB_VITALS$SEPARATOR$timestamp$SEPARATOR$requestName$SEPARATOR$key$SEPARATOR$value"))
-
+    metricsMap.forEach((key, value) => logger.info(s"WEB_VITALS$SEPARATOR$timestamp$SEPARATOR$requestName$SEPARATOR${status.name}$SEPARATOR$key$SEPARATOR$value"))
   }
 
 }

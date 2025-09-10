@@ -75,7 +75,7 @@ case class BrowserActionOpen(actionName: Expression[String], url: Expression[Str
         val endTime = clock.nowMillis
         if (status == KO) currentSession = currentSession.markAsFailed
         if (status == KO && message.isEmpty) message = Option.apply(s"action: $resolvedRequestName marked as KO")
-        if (enableUIMetrics && status != KO) PerformanceUIHelper.reportUIMetrics(startTime, resolvedRequestName, page)
+        if (enableUIMetrics) PerformanceUIHelper.reportUIMetrics(startTime, resolvedRequestName, page, status)
         executeNext(currentSession.set(BROWSER_CONTEXT_KEY, page), startTime, endTime, status, next, resolvedRequestName, None, message, isCrashed)
       }
     }
