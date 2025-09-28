@@ -15,8 +15,9 @@ val browserProtocol: Protocol = gatlingBrowser
     //// This part of setup block is optional
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
+    .enableUIMetrics()
     ////
-    .build()
+    .buildProtocol()
 ```
 
 ## Action name
@@ -42,10 +43,33 @@ browserAction("name").open("#{url}")
 browserAction("name").open(session => session("url").as[String])
 ```
 
-It is possible to set additional navigation options as the second parameter.  
-See the [NavigateOptions documentation here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
+It is possible to set additional **navigation** options or page load **validation**. 
+See the NavigateOptions documentation [here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
 ```scala
-browserAction("name").open("https://docs.gatling.io/", new NavigateOptions().setWaitUntil(NETWORKIDLE))
+browserAction("name").open("https://docs.gatling.io/").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD))
+```
+See the LoadValidations documentations [here](https://playwright.dev/java/docs/api/class-page#page-wait-for-function)
+```scala
+val validationScript =
+  """
+            (function () {
+              const el = document.querySelector('[data-test-id="chat-widget-iframe"]');
+              return document.readyState === "complete" &&
+                     el !== null &&
+                     el.getBoundingClientRect().width > 0 &&
+                     el.getBoundingClientRect().height > 0;
+            })();
+  """
+
+val pageLoadValidator = PageLoadValidator(validationScript, null, new Page.WaitForFunctionOptions().setPollingInterval(100).setTimeout(30000))
+
+browserAction("HomePage").open("https://gatling.io/").withLoadValidations(pageLoadValidator)
+```
+
+You can use it with default script that check [pageCompleteCheckByInactivity](https://github.com/sitespeedio/browsertime/blob/main/lib/core/pageCompleteChecks/pageCompleteCheckByInactivity.js)
+similar that make sitespeed tool
+```scala
+browserAction("name").open("https://docs.gatling.io/").withLoadValidations())
 ```
 
 ## Flow Action
@@ -63,6 +87,20 @@ browserAction("test").executeFlow((page,browserSession) => {
 ```
 
 For **advanced** example see [this guide](./FlowActionAdvanced.md)
+
+## Browser Session Function
+
+Allows manipulation of a page without tracking it in reports.
+
+**Note:** Typically used to extract data and store it in Gatling sessions.
+
+```scala
+browserSessionFunction((page, browserSession) => {
+      val session = browserSession.getScalaSession().set("pageTitle",page.title())
+      browserSession.updateBrowserSession(session)
+});
+```
+
 
 ## Clean Context
 
