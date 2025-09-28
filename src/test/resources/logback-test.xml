@@ -9,7 +9,7 @@
 	</appender>
 
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>target/log/tests.log</file>
+		<file>target/gatling_log/run.log</file>
 		<append>false</append>
 		<encoder>
 			<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>

@@ -1,6 +1,6 @@
 package io.gatling.custom.browser.utils
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{JsonMappingException, ObjectMapper}
 import com.microsoft.playwright.{Page, PlaywrightException}
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.core.Predef.Status
@@ -36,8 +36,9 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
     }
     catch {
       case playwrightException: PlaywrightException =>
-        logger.error(f"Cant execute script for page load validation: ${playwrightException.getMessage}")
-        logger.debug(pageLoadValidator.toString)
+        logger.trace(f"Script executed with failure: ${playwrightException.getMessage}")
+        logger.trace(pageLoadValidator.toString)
+        throw playwrightException
     }
 
   }
@@ -46,10 +47,17 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
 
     val metricsMap = extractMetricsFromBrowser(page)
 
-    metricsMap.forEach((key, value) => {
-      val csvString = generateCsvMetricString(timestamp, requestName, status, key, value)
-      UIMetricFileWriter.recordMetric(csvString)
-    })
+    if(metricsMap.isEmpty){
+      logger.trace(s"No web-vitals metrics collected for page ---> $requestName")
+    }
+    else {
+      metricsMap.forEach((key, value) => {
+        logger.trace(s"reported $key metric for page ---> $requestName ")
+        val csvString = generateCsvMetricString(timestamp, requestName, status, key, value)
+        UIMetricFileWriter.recordMetric(csvString)
+      })
+    }
+
   }
 
   private def generateCsvMetricString(timestamp: Long, requestName: String, status: Status, key: String, value: AnyVal): String = {
@@ -59,11 +67,22 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
   private def extractMetricsFromBrowser(page: Page): util.HashMap[String,AnyVal] = {
     try {
       val metricsJsonString = page.evaluate("JSON.stringify(getPerformanceMetrics())").asInstanceOf[String]
-      objectMapper.readValue(metricsJsonString, classOf[util.HashMap[String, AnyVal]])
+      val metricMap = objectMapper.readValue(metricsJsonString, classOf[util.HashMap[String, AnyVal]])
+
+      if (metricMap == null){
+        throw new NullPointerException("MetricMap is null injected script is broken")
+      }
+      metricMap
     }
     catch {
+      case nullPointerException: NullPointerException =>
+        logger.debug(nullPointerException.getMessage)
+        new util.HashMap[String, AnyVal]()
+      case jsonMappingException: JsonMappingException =>
+        logger.debug(f"Cant deserialize web-vitals metrics: ${jsonMappingException.getMessage}")
+        new util.HashMap[String, AnyVal]()
       case playwrightException: PlaywrightException =>
-        logger.error(f"Cant extract script metrics from browser: ${playwrightException.getMessage}")
+        logger.debug(f"Cant extract web-vitals metrics from browser: ${playwrightException.getMessage}")
         new util.HashMap[String, AnyVal]()
     }
   }
