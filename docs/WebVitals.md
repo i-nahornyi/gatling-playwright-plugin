@@ -18,7 +18,7 @@ ProtocolBuilder browserProtocol = BrowserDsl.gatlingBrowser()
 
 ## 2. Check the Log File
 
-UI metrics are stored in folder with report in use following format:
+UI metrics are stored in folder with report and use following format:
 
 ```csv
 WEB_VITALS,1757624157101,homePage,OK,FCP,1042
