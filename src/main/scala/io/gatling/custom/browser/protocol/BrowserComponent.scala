@@ -8,7 +8,7 @@ import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
 
 import scala.collection.concurrent.TrieMap
 
-case class BrowserComponent(playwright: Playwright, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions)
+case class BrowserComponent(playwright: Playwright, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, enableUIMetrics: Boolean)
   extends ProtocolComponents with StrictLogging {
 
 

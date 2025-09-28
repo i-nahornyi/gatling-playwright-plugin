@@ -7,7 +7,6 @@ results
 /mvnw.cmd
 
 #For building dependency
-buildCommand.txt
 setting.xml
 
 *.class

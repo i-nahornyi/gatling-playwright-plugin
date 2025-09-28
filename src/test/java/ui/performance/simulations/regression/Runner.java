@@ -12,11 +12,14 @@ public class Runner {
     // regression.FailedSimulation
     // regression.ClosedPageRecover
     // regression.Smoke
+    // regression.WebVitalsJava
+    // regression.WebVitalsScala
 
 
     public static void main(String[] args) {
-        String [] runParams = new String[]{
-                GatlingCliOptions.Simulation.shortOption(),"ui.performance.simulations.regression.Smoke",
+        String[] runParams = new String[]{
+                GatlingCliOptions.Simulation.shortOption(), "ui.performance.simulations.regression.Smoke",
+                GatlingCliOptions.RunDescription.shortOption(), "Custom descriptions for test-" + System.currentTimeMillis(),
                 GatlingCliOptions.ResultsFolder.shortOption(), "target/gatling"
         };
 

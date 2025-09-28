@@ -9,14 +9,14 @@ To use the Gatling Playwright Plugin, add the following dependency
 <dependency>
     <groupId>io.github.i-nahornyi</groupId>
     <artifactId>gatling-playwright-plugin</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.4</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```
-gatling group: 'io.github.i-nahornyi', name: 'gatling-playwright-plugin', version: '0.1.2'
+gatling group: 'io.github.i-nahornyi', name: 'gatling-playwright-plugin', version: '0.1.4'
 ```
 
 

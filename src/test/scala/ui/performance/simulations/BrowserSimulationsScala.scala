@@ -21,8 +21,9 @@ class BrowserSimulationsScala extends Simulation {
     //// This part of setup block is optional
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
+    .enableUIMetrics()
     ////
-    .build()
+    .buildProtocol()
 
   /// [Example#1] How to get and put your variable to gatling session
   def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {
@@ -76,15 +77,24 @@ class BrowserSimulationsScala extends Simulation {
     browserSession.updateBrowserSession(session)
   }
 
+  //// [Example#5] How to execute browserSessionFunction
+  def exampleBrowserSessionFunction(page: Page, browserSession: BrowserSession): BrowserSession = {
+    val session = browserSession.getScalaSession().set("pageTitle",page.title())
+
+    browserSession.updateBrowserSession(session)
+  }
+
   def mainScenario: ScenarioBuilder = scenario("test").repeat(1) {
     group("flow-a")(
-      exec(session => session.set("actionName", "test-action-1")
-        .set("url", "https://demo.playwright.dev/todomvc/#/")
-        .set("test_boolean",true)),
+      exec(session => session.set("actionName", "test-action-1").set("url", "https://demo.playwright.dev/todomvc/#/")),
       /*
        *  You can use EL syntax for action name and url
       */
-      exec(browserAction("#{actionName}").open("#{url}")),
+      exec(browserAction("#{actionName}").open("#{url}").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(WaitUntilState.LOAD))),
+      /*
+       *  You can execute some script that not tracking in report
+      */
+      exec(browserSessionFunction(exampleBrowserSessionFunction)),
       pause(1, 5),
       exec(browserAction(session => session("actionName").as[String]).open(session => session("url").as[String])),
       pause(1, 5),
