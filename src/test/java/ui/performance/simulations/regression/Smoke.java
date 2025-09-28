@@ -59,7 +59,7 @@ public class Smoke extends Simulation {
             .exec(
                     pause(3),
                     BrowserDsl.browserAction("#{name}_1").open("#{link}"),
-                    BrowserDsl.browserAction("#{name}_2").open("#{link2}", new Page.NavigateOptions().setWaitUntil(NETWORKIDLE)),
+                    BrowserDsl.browserAction("#{name}_2").open("#{link2}").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(NETWORKIDLE)),
                     BrowserDsl.browserSessionFunction(exampleBrowserSessionFunction),
                     BrowserDsl.browserAction("#{name}_3").executeFlow(scriptedAction),
                     exec(session -> {

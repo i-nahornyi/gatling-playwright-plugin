@@ -17,20 +17,6 @@
 	</appender>
 
 
-	<!-- UI metrics reporter -->
-	<logger name="io.gatling.custom.browser.utils.PerformanceUIHelper" level="INFO" additivity="false">
-		<appender-ref ref="WEB-VITALS" />
-	</logger>
-
-	<appender name="WEB-VITALS" class="ch.qos.logback.core.FileAppender">
-		<file>target/log/metrics.log</file>
-		<append>false</append>
-		<encoder>
-			<pattern>%msg%n</pattern>
-		</encoder>
-	</appender>
-
-
 	<!-- uncomment and set to DEBUG to log all browserActions error -->
 	<!-- uncomment and set to TRACE to log all browserActions -->
 	<logger name="io.gatling.custom.browser" level="TRACE" />

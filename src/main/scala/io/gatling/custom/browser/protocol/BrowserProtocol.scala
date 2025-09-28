@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.StrictLogging
 import io.gatling.core.CoreComponents
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.protocol.{Protocol, ProtocolKey}
+import io.gatling.custom.browser.stats.UIMetricFileWriter
 
 case class BrowserProtocol(options: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, enableUIMetrics: Boolean) extends Protocol {
   type Component = BrowserComponent
@@ -24,6 +25,7 @@ object BrowserProtocol extends StrictLogging {
       coreComponents.actorSystem.registerOnTermination({
         logger.trace("Received termination signal; closing browser and Playwright instances.")
         browserComponent.browserInstance.close(new Browser.CloseOptions().setReason("Received termination signal from Gatling."))
+        UIMetricFileWriter.closeFile()
         playwright.close()
       })
 

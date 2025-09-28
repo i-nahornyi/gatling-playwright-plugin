@@ -5,7 +5,7 @@
 
     <groupId>io.github.i-nahornyi</groupId>
     <artifactId>gatling-playwright-plugin</artifactId>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.1.4-RC1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>gatling-playwright-plugin</name>
@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gatling.version>3.12.0</gatling.version>
         <playwright.version>1.46.0</playwright.version>

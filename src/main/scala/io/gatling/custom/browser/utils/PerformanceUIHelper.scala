@@ -1,40 +1,71 @@
 package io.gatling.custom.browser.utils
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.microsoft.playwright.Page
+import com.microsoft.playwright.{Page, PlaywrightException}
 import com.typesafe.scalalogging.StrictLogging
-import io.gatling.commons.validation.Success
 import io.gatling.core.Predef.Status
 import io.gatling.core.util.ResourceCache
+import io.gatling.custom.browser.model.PageLoadValidator
+import io.gatling.custom.browser.protocol.DefaultProtocolOptions
+import io.gatling.custom.browser.stats.UIMetricFileWriter
 
-import java.nio.charset.Charset
 import java.util
 
 object PerformanceUIHelper extends ResourceCache with StrictLogging {
 
   private final val objectMapper = new ObjectMapper()
   private final val SEPARATOR = ","
-  private val UI_OBSERVER_JS = cachedResource("scripts/ui_observer.js") match {
-    case Success(resource) => resource.string(Charset.defaultCharset())
+
+  ///* UI SCRIPTS
+  private val webVitalsJS: String = Utils.readFileFromResources("scripts/webVitals.js")
+  private val pageCompleteCheckByInactivityJS = Utils.readFileFromResources("scripts/pageCompleteCheckByInactivity.js")
+  ///*
+
+  protected [browser] val defaultPageLoadValidator: PageLoadValidator = PageLoadValidator(pageCompleteCheckByInactivityJS,
+    DefaultProtocolOptions.defaultResourceInactivityTime,
+    DefaultProtocolOptions.defaultWaitPageLoadOptions
+  )
+
+  def injectMetricTrackingScript(page: Page): Unit = {
+      page.addInitScript(webVitalsJS)
   }
 
-  def injectUIPolyfill(page: Page): Unit = {
-    page.addInitScript(UI_OBSERVER_JS)
+  def checkIsPageLoaded(page: Page, pageLoadValidator: PageLoadValidator): Unit = {
+    try {
+      page.waitForFunction(pageLoadValidator.expression, pageLoadValidator.arg, pageLoadValidator.options)
+    }
+    catch {
+      case playwrightException: PlaywrightException =>
+        logger.error(f"Cant execute script for page load validation: ${playwrightException.getMessage}")
+        logger.debug(pageLoadValidator.toString)
+    }
+
   }
 
   def reportUIMetrics(timestamp: Long, requestName: String, page: Page, status: Status): Unit = {
 
-    /*
-          "FCP" -> {Integer@6833} 233
-          "LCP" -> {Double@6835} 119.90000009536743
-          "CLS" -> {Double@6837} 0.35199003522702943
-          "TTFB" -> {Integer@6839} 53
-          "DomLoad" -> {Integer@6841} 334
-          "PageLoad" -> {Integer@6843} 429
-    */
-    val metricsJsonString = page.evaluate("JSON.stringify(getPerformanceMetrics())").asInstanceOf[String]
-    val metricsMap = objectMapper.readValue(metricsJsonString, classOf[util.HashMap[String, AnyVal]])
-    metricsMap.forEach((key, value) => logger.info(s"WEB_VITALS$SEPARATOR$timestamp$SEPARATOR$requestName$SEPARATOR${status.name}$SEPARATOR$key$SEPARATOR$value"))
+    val metricsMap = extractMetricsFromBrowser(page)
+
+    metricsMap.forEach((key, value) => {
+      val csvString = generateCsvMetricString(timestamp, requestName, status, key, value)
+      UIMetricFileWriter.recordMetric(csvString)
+    })
+  }
+
+  private def generateCsvMetricString(timestamp: Long, requestName: String, status: Status, key: String, value: AnyVal): String = {
+    s"WEB_VITALS$SEPARATOR$timestamp$SEPARATOR$requestName$SEPARATOR${status.name}$SEPARATOR$key$SEPARATOR$value\n"
+  }
+
+  private def extractMetricsFromBrowser(page: Page): util.HashMap[String,AnyVal] = {
+    try {
+      val metricsJsonString = page.evaluate("JSON.stringify(getPerformanceMetrics())").asInstanceOf[String]
+      objectMapper.readValue(metricsJsonString, classOf[util.HashMap[String, AnyVal]])
+    }
+    catch {
+      case playwrightException: PlaywrightException =>
+        logger.error(f"Cant extract script metrics from browser: ${playwrightException.getMessage}")
+        new util.HashMap[String, AnyVal]()
+    }
   }
 
 }

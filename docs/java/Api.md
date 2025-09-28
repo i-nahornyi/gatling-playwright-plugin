@@ -39,10 +39,30 @@ BrowserDsl.browserAction("name").open("#{url}")
 BrowserDsl.browserAction("name").open(session -> session.getString("url")
 ```
 
-It is possible to set additional navigation options as the second parameter.  
+It is possible to set additional **navigation** options or page load **validation**.
 See the [NavigateOptions documentation here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
 ```java
-BrowserDsl.browserAction("name").open("https://docs.gatling.io/", new NavigateOptions().setWaitUntil(NETWORKIDLE))
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD))
+```
+See the [LoadValidations documentations here](https://playwright.dev/java/docs/api/class-frame#frame-wait-for-function)
+```java
+String validationScript =
+        """
+                (function () {
+                  const el = document.querySelector('[data-test-id="chat-widget-iframe"]');
+                  return document.readyState === "complete" &&
+                         el !== null &&
+                         el.getBoundingClientRect().width > 0 &&
+                         el.getBoundingClientRect().height > 0;
+                })();
+    """;
+PageLoadValidator pageLoadValidator = new PageLoadValidator(validationScript, null, new Page.WaitForFunctionOptions().setPollingInterval(100).setTimeout(30000));
+
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations(pageLoadValidator))
+```
+U
+```java
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations())
 ```
 
 ## Flow Action

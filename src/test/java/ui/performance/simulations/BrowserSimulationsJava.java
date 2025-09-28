@@ -5,6 +5,7 @@ import com.microsoft.playwright.BrowserType.LaunchOptions;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Page.NavigateOptions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
+import com.microsoft.playwright.options.WaitUntilState;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
 import io.gatling.custom.browser.model.BrowserSession;
 import io.gatling.javaapi.core.*;
@@ -13,9 +14,9 @@ import org.opentest4j.AssertionFailedError;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import static com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE;
 import static io.gatling.javaapi.core.CoreDsl.*;
 
+@SuppressWarnings("unused")
 public class BrowserSimulationsJava extends Simulation {
 
     ProtocolBuilder browserProtocol = BrowserDsl
@@ -46,9 +47,10 @@ public class BrowserSimulationsJava extends Simulation {
     ///// [Example#2] How to set execution timing of action based on your logic
 
     BiFunction<Page, BrowserSession, BrowserSession> exampleFlow2 = (page, browserSession) -> {
-        page.navigate("https://playwright.dev/", new NavigateOptions().setWaitUntil(NETWORKIDLE));
+        page.navigate("https://playwright.dev/", new NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
 
         /// How to evaluate JS in playwrights see ===> https://playwright.dev/java/docs/evaluating
+
         Map<String, Double> timing = (Map<String, Double>) page.evaluate("performance.timing");
 
         browserSession.setActionStartTime(timing.get("navigationStart").longValue());
@@ -93,7 +95,7 @@ public class BrowserSimulationsJava extends Simulation {
                     /*
                      *  You can use EL syntax for action name and url
                      */
-                    exec(BrowserDsl.browserAction("#{actionName}").open("#{url}")),
+                    exec(BrowserDsl.browserAction("#{actionName}").open("#{url}").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE))),
                     /*
                      *  You can execute some script that not tracking in report
                      */

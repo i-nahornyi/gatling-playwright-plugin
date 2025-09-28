@@ -90,7 +90,7 @@ class BrowserSimulationsScala extends Simulation {
       /*
        *  You can use EL syntax for action name and url
       */
-      exec(browserAction("#{actionName}").open("#{url}")),
+      exec(browserAction("#{actionName}").open("#{url}").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(WaitUntilState.LOAD))),
       /*
        *  You can execute some script that not tracking in report
       */
