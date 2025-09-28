@@ -44,11 +44,11 @@ browserAction("name").open(session => session("url").as[String])
 ```
 
 It is possible to set additional **navigation** options or page load **validation**. 
-See the [NavigateOptions documentation here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
+See the NavigateOptions documentation [here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
 ```scala
 browserAction("name").open("https://docs.gatling.io/").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD))
 ```
-See the [LoadValidations documentations here](https://playwright.dev/java/docs/api/class-frame#frame-wait-for-function)
+See the LoadValidations documentations [here](https://playwright.dev/java/docs/api/class-page#page-wait-for-function)
 ```scala
 val validationScript =
   """
@@ -64,6 +64,12 @@ val validationScript =
 val pageLoadValidator = PageLoadValidator(validationScript, null, new Page.WaitForFunctionOptions().setPollingInterval(100).setTimeout(30000))
 
 browserAction("HomePage").open("https://gatling.io/").withLoadValidations(pageLoadValidator)
+```
+
+You can use it with default script that check [pageCompleteCheckByInactivity](https://github.com/sitespeedio/browsertime/blob/main/lib/core/pageCompleteChecks/pageCompleteCheckByInactivity.js)
+similar that make sitespeed tool
+```scala
+browserAction("name").open("https://docs.gatling.io/").withLoadValidations())
 ```
 
 ## Flow Action

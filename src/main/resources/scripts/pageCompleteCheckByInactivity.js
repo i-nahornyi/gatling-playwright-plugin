@@ -1,4 +1,5 @@
 /// * This script uses code from browsertime library (https://github.com/sitespeedio/browsertime)
+/// https://github.com/sitespeedio/browsertime/blob/main/lib/core/pageCompleteChecks/pageCompleteCheckByInactivity.js
 
 waitTime => (function(waitTime) {
   const timing = window.performance.timing;

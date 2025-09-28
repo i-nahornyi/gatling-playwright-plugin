@@ -5,7 +5,7 @@
 
     <groupId>io.github.i-nahornyi</groupId>
     <artifactId>gatling-playwright-plugin</artifactId>
-    <version>0.1.4-RC1-SNAPSHOT</version>
+    <version>0.1.4-RC2</version>
     <packaging>jar</packaging>
 
     <name>gatling-playwright-plugin</name>

@@ -40,11 +40,11 @@ BrowserDsl.browserAction("name").open(session -> session.getString("url")
 ```
 
 It is possible to set additional **navigation** options or page load **validation**.
-See the [NavigateOptions documentation here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
+See the NavigateOptions documentation [here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
 ```java
 BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD))
 ```
-See the [LoadValidations documentations here](https://playwright.dev/java/docs/api/class-frame#frame-wait-for-function)
+See the LoadValidations documentations [here](https://playwright.dev/java/docs/api/class-page#page-wait-for-function)
 ```java
 String validationScript =
         """
@@ -60,7 +60,8 @@ PageLoadValidator pageLoadValidator = new PageLoadValidator(validationScript, nu
 
 BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations(pageLoadValidator))
 ```
-U
+You can use it with default script that check [pageCompleteCheckByInactivity](https://github.com/sitespeedio/browsertime/blob/main/lib/core/pageCompleteChecks/pageCompleteCheckByInactivity.js)
+similar that make sitespeed tool
 ```java
 BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations())
 ```
