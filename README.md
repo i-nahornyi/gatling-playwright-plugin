@@ -22,9 +22,10 @@ Planned and completed features:
 ⬜ Support for additional browsers (Firefox, Edge, etc.)  
 ⬜ Multithreading support  
 ⬜ Video recording and screenshots  
-✅ Extended reports with custom metrics (TTFB, LCP, etc.)  
+⬜ JavaScript performance measurement polyfill helper  
+⬜ Extended reports with custom metrics (TTFB, LCP, etc.)  
 ⬜ Wrapper for UI simulations (abstract class or interface)  
-✅ Example test cases  
+⬜ Example test cases  
 ⬜ Docker image for simplified usage
 
 

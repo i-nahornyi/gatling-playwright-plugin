@@ -12,11 +12,10 @@ case object BrowserProtocolBuilderBase {
 
 
 final case class BrowserProtocolBuilder(launchOptions: LaunchOptions = DefaultProtocolOptions.defaultProtocolOptions,
-                                        contextOptions: NewContextOptions = DefaultProtocolOptions.defaultContextOptions,
-                                        webVitalsEnable: Boolean = DefaultProtocolOptions.defaultWebVitalsEnable) {
+                                        contextOptions: NewContextOptions = DefaultProtocolOptions.defaultContextOptions) {
 
-  implicit def buildProtocol(): Protocol = BrowserProtocol(launchOptions, contextOptions, webVitalsEnable)
+  implicit def build(): Protocol = BrowserProtocol(launchOptions, contextOptions)
   def withLaunchOptions(launchOptions: LaunchOptions): BrowserProtocolBuilder = copy(launchOptions = launchOptions)
   def withContextOptions(contextOptions: NewContextOptions): BrowserProtocolBuilder = copy(contextOptions = contextOptions)
-  def enableUIMetrics(): BrowserProtocolBuilder = copy(webVitalsEnable = true)
+
 }

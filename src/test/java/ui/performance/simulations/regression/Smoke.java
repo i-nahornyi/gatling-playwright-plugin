@@ -3,10 +3,7 @@ package ui.performance.simulations.regression;
 import com.microsoft.playwright.Page;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
 import io.gatling.custom.browser.model.BrowserSession;
-import io.gatling.javaapi.core.FeederBuilder;
-import io.gatling.javaapi.core.ScenarioBuilder;
-import io.gatling.javaapi.core.Session;
-import io.gatling.javaapi.core.Simulation;
+import io.gatling.javaapi.core.*;
 
 import java.util.function.BiFunction;
 
@@ -47,20 +44,12 @@ public class Smoke extends Simulation {
         return browserSession.updateBrowserSession(session);
     };
 
-    BiFunction<Page, BrowserSession, BrowserSession> exampleBrowserSessionFunction = (page, browserSession) -> {
-        page.reload();
-        Session session = browserSession.getJavaSession().set("your_args", "Changed_args").set("pageTitle", page.title());
-
-        return browserSession.updateBrowserSession(session);
-    };
-
     ScenarioBuilder mainScenario = scenario("test")
             .feed(pageFeeder)
             .exec(
                     pause(3),
                     BrowserDsl.browserAction("#{name}_1").open("#{link}"),
-                    BrowserDsl.browserAction("#{name}_2").open("#{link2}").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(NETWORKIDLE)),
-                    BrowserDsl.browserSessionFunction(exampleBrowserSessionFunction),
+                    BrowserDsl.browserAction("#{name}_2").open("#{link2}", new Page.NavigateOptions().setWaitUntil(NETWORKIDLE)),
                     BrowserDsl.browserAction("#{name}_3").executeFlow(scriptedAction),
                     exec(session -> {
                         String actualValue = session.getString("user_defined_args");
