@@ -537,11 +537,30 @@
   function storeMetrics(metricName,metric){
     if(metricName == "CLS"){
         window.__vitals[metricName] = metric.value.toFixed(4)
-    }else {
-        window.__vitals[metricName] = metric.value.toFixed(0)
+    }
+    else {
+
+        let oldValue = window.__vitals[metricName] ? window.__vitals[metricName] : 0
+        let newValue = metric.value.toFixed(0)
+        window.__vitals[metricName] = oldValue < newValue ? newValue : oldValue;
     }
 
-    window.__vitalsFull[metricName] = metric
+  }
+
+
+  function revalidateMeasuring(){
+      new PerformanceObserver((entryList) => {
+          const entries = entryList.getEntries();
+          const lastEntry = entries[entries.length - 1]; // Use the latest LCP candidate
+          const entry = Math.max(lastEntry.renderTime, lastEntry.loadTime);
+          storeMetrics("LCP",{ "value": entry})
+        }).observe({ type: "largest-contentful-paint", buffered: true });
+
+       new PerformanceObserver((entryList) => {
+          for (const entry of entryList.getEntriesByName('first-contentful-paint')) {
+            storeMetrics("FCP",{"value": entry.startTime})
+          }
+        }).observe({type: 'paint', buffered: true});
   }
 
   // dist/modules/collectVitals.js
@@ -553,7 +572,14 @@
   onFCP((v) => storeMetrics("FCP",v),{reportAllChanges: true});
   onTTFB((v) => storeMetrics("TTFB",v),{reportAllChanges: true});
 
+  revalidateMeasuring()
+
   window.getPerformanceMetrics = function() {
+    console.log("[GatlingPlaywrightPlugin] Metrics collected")
+    console.log(window.__vitals)
+
+
+
     return window.__vitals;
   };
 

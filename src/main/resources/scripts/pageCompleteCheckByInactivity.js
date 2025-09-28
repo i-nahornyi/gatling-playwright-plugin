@@ -2,6 +2,8 @@
 /// https://github.com/sitespeedio/browsertime/blob/main/lib/core/pageCompleteChecks/pageCompleteCheckByInactivity.js
 
 waitTime => (function(waitTime) {
+
+  console.log("[GatlingPlaywrightPlugin] Start page check by inactivity")
   const timing = window.performance.timing;
   const p = window.performance;
   const limit = waitTime;
@@ -20,9 +22,14 @@ waitTime => (function(waitTime) {
 
   const loadTime = timing.loadEventEnd - timing.navigationStart;
 
+  var result = false
+
   if (!lastEntry || lastEntry.responseEnd < loadTime) {
-    return p.now() - loadTime > limit;
+    result = p.now() - loadTime > limit;
   } else {
-    return p.now() - lastEntry.responseEnd > limit;
+    result = p.now() - lastEntry.responseEnd > limit;
   }
+
+  console.log("[GatlingPlaywrightPlugin] Finish page check by inactivity result: "+ result)
+  return result
 })(waitTime);
