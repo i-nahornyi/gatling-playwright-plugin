@@ -13,6 +13,6 @@ public class BrowserProtocolBuilder implements ProtocolBuilder {
 
     @Override
     public Protocol protocol() {
-        return wrapped.buildProtocol();
+        return wrapped.build();
     }
 }
