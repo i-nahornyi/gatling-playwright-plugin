@@ -1,7 +1,13 @@
 package io.gatling.custom.browser.utils
 
-object PlaywrightExceptionParser {
+import com.microsoft.playwright.PlaywrightException
+import com.microsoft.playwright.impl.TargetClosedError
+import com.typesafe.scalalogging.StrictLogging
+import io.gatling.commons.stats.KO
+import io.gatling.custom.browser.actor.BrowserWorkerActor.ActionStatus
+import org.opentest4j.AssertionFailedError
 
+object PlaywrightExceptionParser extends StrictLogging {
 
 
   /*
@@ -29,7 +35,7 @@ object PlaywrightExceptionParser {
   private final val SPLITTER_STRING = "\nCall log:\n"
   private final val REASON_PART_START = "message='"
 
-  def parseErrorMessage(rawErrorMessage: String, errorType: String): Option[String] = {
+  private def parseErrorMessage(rawErrorMessage: String, errorType: String): Option[String] = {
 
     val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
 
@@ -77,7 +83,7 @@ object PlaywrightExceptionParser {
 
   */
 
-  def parseAssertionErrorMessage(rawErrorMessage: String): Option[String] = {
+  private def parseAssertionErrorMessage(rawErrorMessage: String): Option[String] = {
 
     val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
 
@@ -93,6 +99,27 @@ object PlaywrightExceptionParser {
     }
     else {
       Option.apply(rawErrorMessage)
+    }
+  }
+
+
+  def handleException(error: Throwable, requestName: String): ActionStatus = {
+    error match {
+      case assertionFailedError: AssertionFailedError =>
+        logger.debug(s"AssertionFailedError: $requestName ${assertionFailedError.getMessage}")
+        ActionStatus(KO , PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage))
+
+      case targetClosedError: TargetClosedError =>
+        logger.debug(s"TargetClosedError: $requestName ${targetClosedError.getMessage}")
+        ActionStatus(KO , Some("Target page, context or browser has been closed"))
+
+      case playwrightException: PlaywrightException =>
+        logger.debug(s"PlaywrightException: $requestName ${playwrightException.getMessage}")
+        ActionStatus(KO ,PlaywrightExceptionParser.parseErrorMessage( playwrightException.getMessage, playwrightException.getClass.getSimpleName))
+
+      case exception: Exception =>
+        logger.debug(s"Browser action crashed: $requestName ${exception.getMessage}")
+        ActionStatus(KO, Some(s"crashed with ${exception.getMessage}"), isCrashed = true)
     }
   }
 }

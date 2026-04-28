@@ -1,15 +1,16 @@
 package io.gatling.custom.browser.actions
 
-import com.microsoft.playwright.{BrowserContext, Page}
 import io.gatling.core.action.{Action, ChainableAction}
 import io.gatling.core.session.Session
 import io.gatling.core.stats.StatsEngine
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
-import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
+import io.gatling.custom.browser.actor.{BrowserCommandResponse, BrowserWorkerActor}
+import io.gatling.custom.browser.utils.Constants
+
+import scala.concurrent.Await
 
 case class BrowserClearContext(ctx: ScenarioContext, next: Action) extends ChainableAction with NameGen with BrowserActionsBase {
-  var page: Page = _
 
   override def statsEngine: StatsEngine = ctx.coreComponents.statsEngine
 
@@ -18,20 +19,17 @@ case class BrowserClearContext(ctx: ScenarioContext, next: Action) extends Chain
   override protected def execute(session: Session): Unit = {
 
     val userId = session.userId
-
     logger.trace(s"userID-$userId, execute ClearContext action")
 
-    if (session.contains(BROWSER_CONTEXT_KEY)) {
+    if(browserActorPool.existActor(userId)){
 
-      session(BROWSER_CONTEXT_KEY).as[Page].context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
-      logger.trace(s"userID-$userId, remove BrowserContext from BrowserContextPool")
-      browserContextsPool.remove(userId)
+      val browserActorWorker = browserActorPool.getActorById(userId)
+      val promise = browserActorWorker.replyPromise[BrowserCommandResponse](Constants.PROMISE_TIMEOUT)
 
-      logger.trace(s"userID-$userId, remove BrowserContext from session")
-      next ! session.remove(BROWSER_CONTEXT_KEY)
+      browserActorWorker ! BrowserWorkerActor.ClosePage(promise)
+      Await.result(promise.future, Constants.PROMISE_TIMEOUT)
+      logger.trace(s"userID-$userId, remove BrowserContext from BrowserWorkerActor")
     }
-    else {
-      next ! session
-    }
+    next ! session
   }
 }

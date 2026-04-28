@@ -535,50 +535,37 @@
 
 
   function storeMetrics(metricName,metric){
+    console.log("[GatlingPlaywrightPlugin] Metrics reported")
+    console.log(metric)
+    window.__vitalsFull[metricName] = metric
     if(metricName == "CLS"){
         window.__vitals[metricName] = metric.value.toFixed(4)
+
     }
     else {
-
         let oldValue = window.__vitals[metricName] ? window.__vitals[metricName] : 0
         let newValue = metric.value.toFixed(0)
         window.__vitals[metricName] = oldValue < newValue ? newValue : oldValue;
     }
-
   }
 
-
-  function revalidateMeasuring(){
-      new PerformanceObserver((entryList) => {
-          const entries = entryList.getEntries();
-          const lastEntry = entries[entries.length - 1]; // Use the latest LCP candidate
-          const entry = Math.max(lastEntry.renderTime, lastEntry.loadTime);
-          storeMetrics("LCP",{ "value": entry})
-        }).observe({ type: "largest-contentful-paint", buffered: true });
-
-       new PerformanceObserver((entryList) => {
-          for (const entry of entryList.getEntriesByName('first-contentful-paint')) {
-            storeMetrics("FCP",{"value": entry.startTime})
-          }
-        }).observe({type: 'paint', buffered: true});
-  }
-
+  if (window == window.top){
   // dist/modules/collectVitals.js
-  window.__vitals = {};
-  window.__vitalsFull = {};
-  onCLS((v) => storeMetrics("CLS",v),{reportAllChanges: true});
-  onLCP((v) => storeMetrics("LCP",v),{reportAllChanges: true});
-  onINP((v) => storeMetrics("INP",v),{reportAllChanges: true});
-  onFCP((v) => storeMetrics("FCP",v),{reportAllChanges: true});
-  onTTFB((v) => storeMetrics("TTFB",v),{reportAllChanges: true});
+    window.__vitals = {};
+    window.__vitalsFull = {};
 
-  revalidateMeasuring()
+
+    onCLS((v) => storeMetrics("CLS",v),{reportAllChanges: true});
+    onLCP((v) => storeMetrics("LCP",v),{reportAllChanges: true});
+    onINP((v) => storeMetrics("INP",v),{reportAllChanges: true});
+    onFCP((v) => storeMetrics("FCP",v),{reportAllChanges: true});
+    onTTFB((v) => storeMetrics("TTFB",v),{reportAllChanges: true});
+  }
+
 
   window.getPerformanceMetrics = function() {
     console.log("[GatlingPlaywrightPlugin] Metrics collected")
     console.log(window.__vitals)
-
-
 
     return window.__vitals;
   };

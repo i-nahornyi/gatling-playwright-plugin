@@ -1,13 +1,17 @@
 package ui.performance.simulations.regression;
 
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Page;
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.Cookie;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
+import io.gatling.custom.browser.model.BrowserSession;
 import io.gatling.custom.browser.model.PageLoadValidator;
+import io.gatling.javaapi.core.ChainBuilder;
 import io.gatling.javaapi.core.ProtocolBuilder;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
+
+import java.util.Collections;
+import java.util.function.BiFunction;
 
 import static com.microsoft.playwright.options.WaitUntilState.LOAD;
 import static io.gatling.javaapi.core.CoreDsl.*;
@@ -23,22 +27,33 @@ public class WebVitalsJava extends Simulation {
             .buildProtocol();
 
 
-    String validationScript = BrowserDsl.loadScript("scripts/home_page_load.js");
-    PageLoadValidator pageLoadValidator = new PageLoadValidator(
-            validationScript,
+    String customValidationScript = BrowserDsl.loadScript("scripts/home_page_load.js");
+    PageLoadValidator customPageLoadValidator = new PageLoadValidator(
+            customValidationScript,
             null,
             new Page.WaitForFunctionOptions().setPollingInterval(100).setTimeout(30000)
     );
 
+    BiFunction<Page, BrowserSession, BrowserSession> setupSession = (page, browserSession) -> {
+        page.context().addCookies(Collections.singletonList(
+                new Cookie("__hs_cookie_cat_pref", "1:true_2:true_3:true").setDomain("gatling.io").setPath("/"))
+        );
+        return browserSession;
+    };
+
+    ChainBuilder THINK_TIME = pause(1,3);
+
+
     ScenarioBuilder mainScenario = scenario("test").repeat(5).on(
-            BrowserDsl.browserAction("HomePage").open("https://gatling.io/").withLoadValidations(pageLoadValidator),
-            pause(1,3),
+            BrowserDsl.browserSessionFunction(setupSession),
+            BrowserDsl.browserAction("HomePage").open("https://gatling.io/").withLoadValidations(customPageLoadValidator),
+            THINK_TIME,
             BrowserDsl.browserAction("Pricing").open("https://gatling.io/pricing"),
-            pause(1,3),
+            THINK_TIME,
             BrowserDsl.browserAction("Customers").open("https://gatling.io/customers").withLoadValidations(),
-            pause(1,3),
+            THINK_TIME,
             BrowserDsl.browserAction("How_it_works").open("https://gatling.io/how-it-works").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD)),
-            pause(1,3),
+            THINK_TIME,
             BrowserDsl.browserCleanContext()
     );
 
