@@ -20,7 +20,7 @@ Planned and completed features:
 ✅ Java API  
 ✅ Support for Gatling EL in URLs, names, and script blocks  
 ⬜ Support for additional browsers (Firefox, Edge, etc.)  
-⬜ Multithreading support  
+✅ Multithreading support  
 ⬜ Video recording and screenshots  
 ✅ Extended reports with custom metrics (TTFB, LCP, etc.)  
 ⬜ Wrapper for UI simulations (abstract class or interface)  
