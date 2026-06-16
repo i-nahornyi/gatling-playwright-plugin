@@ -39,7 +39,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gatling.version>3.12.0</gatling.version>
-        <playwright.version>1.46.0</playwright.version>
+        <playwright.version>1.60.0</playwright.version>
         <gatling-maven-plugin.version>4.9.6</gatling-maven-plugin.version>
         <scala-maven-plugin.version>4.8.1</scala-maven-plugin.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -73,6 +73,14 @@
             <artifactId>playwright</artifactId>
             <version>${playwright.version}</version>
             <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
