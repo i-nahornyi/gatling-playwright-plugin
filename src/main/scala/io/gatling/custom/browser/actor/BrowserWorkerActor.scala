@@ -104,7 +104,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
         }
       }
       catch {
-        case exception: Exception =>
+        case exception: Throwable =>
           actionStatus = PlaywrightExceptionParser.handleException(exception, commandContext.resolvedRequestName)
       }
       finally {
@@ -133,7 +133,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
         currentSession = browserSession.getScalaSession()
       }
       catch {
-        case exception: Exception =>
+        case exception: Throwable =>
           actionStatus = PlaywrightExceptionParser.handleException(exception, commandContext.resolvedRequestName)
       }
       finally {

@@ -12,6 +12,8 @@ import java.util.function.BiFunction;
 
 import static com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE;
 import static io.gatling.javaapi.core.CoreDsl.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("unused")
 public class Smoke extends Simulation {
@@ -21,10 +23,9 @@ public class Smoke extends Simulation {
 
 
     BiFunction<Page, BrowserSession, BrowserSession> scriptedAction = (page, browserSession) -> {
-        Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{link.exists()}");
 
-        log.warn("valueFromSession");
-        log.warn("ActualValue => {} | Expected => {}",valueFromSession,true);
+        Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{link.exists()}");
+        assertEquals(true, valueFromSession);
 
         Session session = browserSession.getJavaSession().set("user_defined_args", "user_defined_value");
 
@@ -33,15 +34,12 @@ public class Smoke extends Simulation {
         browserSession.setActionStartTime(currentTime);
         browserSession.setActionEndTime(currentTime + 200);
 
-        log.warn("setActionDuration");
-        log.warn("ActualValue => {} | Expected => {}",200,(browserSession.getActionEndTime() - browserSession.getActionStartTime()));
-
+        assertEquals(200, browserSession.getActionEndTime() - browserSession.getActionStartTime());
 
         String errorMessage = "User defined error message";
         browserSession.setStatusKO(errorMessage);
 
-        log.warn("setStatusKoWithMessage");
-        log.warn("ActualValue => {} | Expected => {}",browserSession.getErrorMessage().get(), errorMessage);
+        assertEquals(browserSession.getErrorMessage().get(), errorMessage);
 
 
         return browserSession.updateBrowserSession(session);
@@ -50,7 +48,6 @@ public class Smoke extends Simulation {
     BiFunction<Page, BrowserSession, BrowserSession> exampleBrowserSessionFunction = (page, browserSession) -> {
         page.reload();
         Session session = browserSession.getJavaSession().set("your_args", "Changed_args").set("pageTitle", page.title());
-
         return browserSession.updateBrowserSession(session);
     };
 
@@ -64,17 +61,14 @@ public class Smoke extends Simulation {
                     BrowserDsl.browserAction("#{name}_3").executeFlow(scriptedAction),
                     exec(session -> {
                         String actualValue = session.getString("user_defined_args");
-                        log.warn("scriptedAction");
-                        log.warn("ActualValue => {} | Expected => {}",actualValue,"user_defined_value");
-                        log.warn("sessionShouldBeFailed");
-                        log.warn("ActualValue => {} | ExpectedValue => {}", session.isFailed(), true);
+                        assertEquals("user_defined_value", actualValue);
+                        assertTrue(session.isFailed());
                         return session;
                     }),
                     BrowserDsl.browserCleanContext(),
                     exitHereIfFailed(),
                     exec(session -> {
-                        log.error("This block shouldn't execute");
-                        return session;
+                        throw new IllegalStateException();
                     })
             );
 

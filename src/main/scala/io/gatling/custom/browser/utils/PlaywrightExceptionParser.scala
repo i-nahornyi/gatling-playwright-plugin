@@ -10,30 +10,40 @@ import org.opentest4j.AssertionFailedError
 object PlaywrightExceptionParser extends StrictLogging {
 
 
-  /*
+/* We assume that the standard error message is well-formatted and follows the structure below.
+    To build our custom message, we should:
 
-  We assume that the standard error message is well-formatted and follows the structure below.
-  To build our custom message, we should:
+    1. Split the message by `"\nCall log:\n"` into two parts.
+    2. Extract the locator from `part[1]`.
+    3. Extract the reason from `part[0]`.
+    4. Remove delimiters
+    5. Construct the final string using both parts.
 
-  1. Split the message by `"\nCall log:\n"` into two parts.
-  2. Extract the locator from `part[1]`.
-  3. Extract the reason from `part[0]`.
-  4. Construct the final string using both parts.
 
   Error {
-    message='Timeout 3000ms exceeded.
+    message='Timeout 30000ms exceeded.
     name='TimeoutError
-    stack='TimeoutError: Timeout 3000ms exceeded.
-      at ProgressController.run (/private/var/folders/z4/bnlz_rt90h99pq7ylkp0_6hw0000gn/T/playwright-java-3427629845495357508/package/lib/server/progress.js:78:26)
+    stack='TimeoutError: Timeout 30000ms exceeded.
+      at _ProgressController.run (C:\temp\playwright-java-9903450257928512556\package\lib\coreBundle.js:12962:32)
+      at _FrameDispatcher._runCommand (C:\temp\playwright-java-9903450257928512556\package\lib\coreBundle.js:24019:35)
+      at DispatcherConnection.dispatch (C:\temp\playwright-java-9903450257928512556\package\lib\coreBundle.js:24253:44)
   }
   Call log:
-  - waiting for locator("#main-content") to be hidden
-  -   locator resolved to visible <main class="body" id="main-content">…</main>
-  -   locator resolved to visible <main class="body" id="main-content">…</main>
-  */
+  -   - waiting for locator("//*[@id=\"__docusaurus\"]/nav") to be hidden
+  -     62 × locator resolved to visible <nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top">…</nav>
+
+ */
+ */
+
 
   private final val SPLITTER_STRING = "\nCall log:\n"
   private final val REASON_PART_START = "message='"
+  private def sanitizeString(targetString: String): String = {
+    targetString
+      .replace(REASON_PART_START, "")
+      .replaceAll("-\\s","")
+      .trim
+  }
 
   private def parseErrorMessage(rawErrorMessage: String, errorType: String): Option[String] = {
 
@@ -42,8 +52,8 @@ object PlaywrightExceptionParser extends StrictLogging {
     if (checkIsStandardFormat) {
       val messagePart = rawErrorMessage.split(SPLITTER_STRING)
 
-      val reasonText = messagePart.head.split("\n").apply(1).trim.replace(REASON_PART_START, "")
-      val locatorText = messagePart.apply(1).split("\n").apply(0)
+      val reasonText = sanitizeString(messagePart.head.split("\n").apply(1))
+      val locatorText = sanitizeString(messagePart.apply(1).split("\n").apply(0))
       Option.apply(s"$reasonText $locatorText")
 
     }
@@ -51,51 +61,50 @@ object PlaywrightExceptionParser extends StrictLogging {
       val checkIsCanExtactErrorMessage = rawErrorMessage.contains(REASON_PART_START)
 
       if (checkIsCanExtactErrorMessage){
-        val reasonText = rawErrorMessage.split("\n").apply(1).trim.replace(REASON_PART_START, "")
+        val reasonText = sanitizeString(rawErrorMessage.split("\n").apply(1))
         return Option.apply(s"$reasonText")
       }
-      Option.apply(s"action: throw $errorType")
+      Option.apply(s"Action: throw $errorType")
     }
   }
 
   /*
-
+=====
   Without actual result:
 =====
   Locator expected to be disabled
   Call log:
-  Locator.expect with timeout 5000ms
-  waiting for locator("locator")
-    locator resolved to <nav aria-label="Main" class="navbar navbar--fixed-top">…</nav>
-    unexpected value "enabled"
+    - Assert "isDisabled" with timeout 5000ms
+    - waiting for locator("//*[@id=\"__docusaurus\"]/nav")
+      14 × locator resolved to <nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top">…</nav>
+         - unexpected value "enabled"
+
+   */
 =====
   With actual result:
 =====
-  Page title expected to be: Error expected title
+  Page title expected to be
+  Expected: Error expected title
   Received: Fast and reliable end-to-end testing for modern web apps | Playwright
 
   Call log:
-  Locator.expect with timeout 5000ms
-  waiting for locator(":root")
-    locator resolved to <html lang="en" dir="ltr" data-theme="light" data-has-hydrated="" class="plugin-pages plugin-id-default" data-rh="lang,dir,class,data-has-hydrated">…</html>
-    unexpected value "Fast and reliable end-to-end testing for modern web apps | Playwright"
+    - Assert "hasTitle" with timeout 5000ms
+      14 × unexpected value "Fast and reliable end-to-end testing for modern web apps | Playwright"
 ====
 
   */
 
-  private def parseAssertionErrorMessage(rawErrorMessage: String): Option[String] = {
+  private def parseAssertionErrorMessage(assertionFailedError: AssertionFailedError): Option[String] = {
 
+    val rawErrorMessage = assertionFailedError.getMessage
     val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
 
     if (checkIsStandardFormat) {
       val messagePart = rawErrorMessage.split(SPLITTER_STRING)
 
-      val headPart = messagePart.apply(0).split("\n").mkString("; ")
+      val headPart = messagePart.apply(0).split("\n").mkString(";")
 
-      val errorPart = messagePart.apply(1).split("\n").apply(0)
-      val locatorPart = messagePart.apply(1).split("\n").apply(1)
-
-      Option.apply(s"$headPart === $errorPart - $locatorPart")
+      Option.apply(s"$headPart")
     }
     else {
       Option.apply(rawErrorMessage)
@@ -106,19 +115,19 @@ object PlaywrightExceptionParser extends StrictLogging {
   def handleException(error: Throwable, requestName: String): ActionStatus = {
     error match {
       case assertionFailedError: AssertionFailedError =>
-        logger.debug(s"AssertionFailedError: $requestName ${assertionFailedError.getMessage}")
-        ActionStatus(KO , PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError.getMessage))
+        logger.debug(s"AssertionFailedError:\nActionName=$requestName\n${assertionFailedError.getMessage}")
+        ActionStatus(KO , PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError))
 
       case targetClosedError: TargetClosedError =>
-        logger.debug(s"TargetClosedError: $requestName ${targetClosedError.getMessage}")
+        logger.debug(s"TargetClosedError:\nActionName=$requestName\n${targetClosedError.getMessage}")
         ActionStatus(KO , Some("Target page, context or browser has been closed"))
 
       case playwrightException: PlaywrightException =>
-        logger.debug(s"PlaywrightException: $requestName ${playwrightException.getMessage}")
-        ActionStatus(KO ,PlaywrightExceptionParser.parseErrorMessage( playwrightException.getMessage, playwrightException.getClass.getSimpleName))
+        logger.debug(s"PlaywrightException:\nActionName=$requestName\n${playwrightException.getMessage}")
+        ActionStatus(KO ,PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName))
 
       case exception: Exception =>
-        logger.debug(s"Browser action crashed: $requestName ${exception.getMessage}")
+        logger.debug(s"Browser action crashed:\nActionName=$requestName\n${exception.getMessage}")
         ActionStatus(KO, Some(s"crashed with ${exception.getMessage}"), isCrashed = true)
     }
   }
