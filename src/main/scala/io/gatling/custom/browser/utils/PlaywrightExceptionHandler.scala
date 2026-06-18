@@ -7,7 +7,7 @@ import io.gatling.commons.stats.KO
 import io.gatling.custom.browser.actor.BrowserWorkerActor.ActionStatus
 import org.opentest4j.AssertionFailedError
 
-object PlaywrightExceptionParser extends StrictLogging {
+object PlaywrightExceptionHandler extends StrictLogging {
 
 
 /* We assume that the standard error message is well-formatted and follows the structure below.
@@ -116,7 +116,7 @@ object PlaywrightExceptionParser extends StrictLogging {
     error match {
       case assertionFailedError: AssertionFailedError =>
         logger.debug(s"AssertionFailedError:\nActionName=$requestName\n${assertionFailedError.getMessage}")
-        ActionStatus(KO , PlaywrightExceptionParser.parseAssertionErrorMessage(assertionFailedError))
+        ActionStatus(KO , parseAssertionErrorMessage(assertionFailedError))
 
       case targetClosedError: TargetClosedError =>
         logger.debug(s"TargetClosedError:\nActionName=$requestName\n${targetClosedError.getMessage}")
@@ -124,11 +124,11 @@ object PlaywrightExceptionParser extends StrictLogging {
 
       case playwrightException: PlaywrightException =>
         logger.debug(s"PlaywrightException:\nActionName=$requestName\n${playwrightException.getMessage}")
-        ActionStatus(KO ,PlaywrightExceptionParser.parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName))
+        ActionStatus(KO , parseErrorMessage(playwrightException.getMessage, playwrightException.getClass.getSimpleName))
 
-      case exception: Exception =>
-        logger.debug(s"Browser action crashed:\nActionName=$requestName\n${exception.getMessage}")
-        ActionStatus(KO, Some(s"crashed with ${exception.getMessage}"), isCrashed = true)
+      case throwable: Throwable =>
+        logger.debug(s"Browser action crashed:\nActionName=$requestName\n${throwable.getMessage}")
+        ActionStatus(KO, Some(s"crashed with ${throwable.getMessage}"), isCrashed = true)
     }
   }
 }

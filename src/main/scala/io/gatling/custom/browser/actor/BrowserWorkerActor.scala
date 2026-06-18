@@ -8,7 +8,7 @@ import io.gatling.core.actor.{Actor, Behavior}
 import io.gatling.core.session.Session
 import io.gatling.custom.browser.actor.BrowserWorkerActor._
 import io.gatling.custom.browser.model.{BrowserSession, PageLoadValidator}
-import io.gatling.custom.browser.utils.{PerformanceUIHelper, PlaywrightExceptionParser}
+import io.gatling.custom.browser.utils.{PerformanceUIHelper, PlaywrightExceptionHandler}
 
 import java.util.function.BiFunction
 import scala.concurrent.Promise
@@ -62,24 +62,24 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
       commandContext.promise.trySuccess()
       stay
 
-    case getBrowserContext: GetBrowserContext[BrowserContext] =>
-      getBrowserContext.promise.complete(Try(browserContext))
+    case commandContext: GetBrowserContext[BrowserContext] =>
+      commandContext.promise.complete(Try(browserContext))
       stay
 
-    case recreateBrowser: RecreateBrowser[Browser] =>
+    case commandContext: RecreateBrowser[Browser] =>
       browser = playwright.chromium().launch(launchOptions)
-      recreateBrowser.promise.complete(Try(browser))
+      commandContext.promise.complete(Try(browser))
       stay
 
-    case createNewPage: CreateNewPage[Page] =>
+    case commandContext: CreateNewPage[Page] =>
       browserContext = browser.newContext(contextOptions)
       page = browserContext.newPage()
-      createNewPage.promise.complete(Try(page))
+      commandContext.promise.complete(Try(page))
       stay
 
-    case closePage: ClosePage[Unit] =>
+    case commandContext: ClosePage[Unit] =>
       page.context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
-      closePage.promise.trySuccess()
+      commandContext.promise.trySuccess()
       stay
 
     case commandContext: StopBrowserWorker[Unit] =>
@@ -105,7 +105,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
       }
       catch {
         case exception: Throwable =>
-          actionStatus = PlaywrightExceptionParser.handleException(exception, commandContext.resolvedRequestName)
+          actionStatus = PlaywrightExceptionHandler.handleException(exception, commandContext.resolvedRequestName)
       }
       finally {
         val endTime = commandContext.clock.nowMillis
@@ -130,11 +130,11 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
       var startTime = commandContext.clock.nowMillis
       try {
         browserSession = postProcessorFunc.apply(page, browserSession)
-        currentSession = browserSession.getScalaSession()
+        currentSession = browserSession.getGatlingSession
       }
       catch {
         case exception: Throwable =>
-          actionStatus = PlaywrightExceptionParser.handleException(exception, commandContext.resolvedRequestName)
+          actionStatus = PlaywrightExceptionHandler.handleException(exception, commandContext.resolvedRequestName)
       }
       finally {
         var endTime = commandContext.clock.nowMillis
@@ -143,7 +143,6 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
         //        if (executeFlow.enableUIMetrics) PerformanceUIHelper.reportUIMetrics(startTime, executeFlow.resolvedRequestName, page, status, currentSession.userId)
         commandContext.promise.trySuccess(BrowserCommandResponse(startTime, endTime, currentSession, actionStatus))
       }
-
       stay
   }
 
