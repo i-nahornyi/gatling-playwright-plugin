@@ -3,7 +3,7 @@ package ui.performance.simulations.regression;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.Cookie;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
-import io.gatling.custom.browser.model.BrowserSession;
+import io.gatling.custom.browser.javaapi.model.BrowserSession;
 import io.gatling.custom.browser.model.PageLoadValidator;
 import io.gatling.javaapi.core.ChainBuilder;
 import io.gatling.javaapi.core.ProtocolBuilder;

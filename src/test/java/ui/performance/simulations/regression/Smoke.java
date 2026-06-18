@@ -2,7 +2,7 @@ package ui.performance.simulations.regression;
 
 import com.microsoft.playwright.Page;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
-import io.gatling.custom.browser.model.BrowserSession;
+import io.gatling.custom.browser.javaapi.model.BrowserSession;
 import io.gatling.javaapi.core.FeederBuilder;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Session;
@@ -24,10 +24,12 @@ public class Smoke extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> scriptedAction = (page, browserSession) -> {
 
-        Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{link.exists()}");
-        assertEquals(true, valueFromSession);
+        log.info("executed -> scriptedAction");
 
-        Session session = browserSession.getJavaSession().set("user_defined_args", "user_defined_value");
+        Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{link.exists()}");
+        assertEquals("Value from session not resolved",true, valueFromSession);
+
+        Session session = browserSession.getGatlingSession().set("user_defined_args", "user_defined_value");
 
         long currentTime = System.currentTimeMillis();
 
@@ -38,16 +40,15 @@ public class Smoke extends Simulation {
 
         String errorMessage = "User defined error message";
         browserSession.setStatusKO(errorMessage);
+        assertEquals("User defined error message not set", browserSession.getErrorMessage().get(), errorMessage);
 
-        assertEquals(browserSession.getErrorMessage().get(), errorMessage);
-
-
-        return browserSession.updateBrowserSession(session);
+        browserSession = browserSession.updateBrowserSession(session);
+        return browserSession;
     };
 
     BiFunction<Page, BrowserSession, BrowserSession> exampleBrowserSessionFunction = (page, browserSession) -> {
         page.reload();
-        Session session = browserSession.getJavaSession().set("your_args", "Changed_args").set("pageTitle", page.title());
+        Session session = browserSession.getGatlingSession().set("your_args", "Changed_args").set("pageTitle", page.title());
         return browserSession.updateBrowserSession(session);
     };
 
@@ -61,8 +62,8 @@ public class Smoke extends Simulation {
                     BrowserDsl.browserAction("#{name}_3").executeFlow(scriptedAction),
                     exec(session -> {
                         String actualValue = session.getString("user_defined_args");
-                        assertEquals("user_defined_value", actualValue);
-                        assertTrue(session.isFailed());
+                        assertEquals("User defined message doesn't set","user_defined_value", actualValue);
+                        assertTrue("Session should fail",session.isFailed());
                         return session;
                     }),
                     BrowserDsl.browserCleanContext(),

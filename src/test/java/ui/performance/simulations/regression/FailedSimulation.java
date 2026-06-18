@@ -5,7 +5,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
-import io.gatling.custom.browser.model.BrowserSession;
+import io.gatling.custom.browser.javaapi.model.BrowserSession;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
 
@@ -27,7 +27,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwAssertionFailedError = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             PlaywrightAssertions.assertThat(page.locator("//*[@id=\"__docusaurus\"]/nav")).isDisabled();
         }
@@ -36,7 +36,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwAssertionFailedErrorWithExpected = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             PlaywrightAssertions.assertThat(page).hasTitle("Error expected title");
         }
@@ -45,7 +45,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwTimeoutError = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             page.check("#locatorThatNotExist");
         }
@@ -54,7 +54,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwTimeoutError2 = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             page.locator("//*[@id=\"__docusaurus\"]/nav").waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
         }
@@ -63,7 +63,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwDriverException = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             page.evaluate("var e = badJsExpression");
         }
@@ -72,7 +72,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwDriverException2 = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.navigate("https://playwright.dev/");
             page.evaluate("return badJsExpression");
         }
@@ -81,7 +81,7 @@ public class FailedSimulation extends Simulation {
 
     BiFunction<Page, BrowserSession, BrowserSession> throwClosedError = (page, browserSession) -> {
 
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             page.close();
             page.navigate("https://playwright.dev/");
         }
@@ -89,10 +89,8 @@ public class FailedSimulation extends Simulation {
     };
 
 
-
     BiFunction<Page, BrowserSession, BrowserSession> crashAction = (page, browserSession) -> {
-
-        if (!browserSession.getJavaSession().isFailed()) {
+        if (!browserSession.getGatlingSession().isFailed()) {
             throw new IllegalArgumentException("My text of exception");
         }
         return browserSession;
@@ -103,7 +101,7 @@ public class FailedSimulation extends Simulation {
                     pause(1),
                     BrowserDsl.browserAction("#{variable_that_not_defined}").open("https://docs.gatling1.io/"),
                     exec(session -> {
-                        assertTrue("variable_that_not_defined",session.isFailed());
+                        assertTrue("variable_that_not_defined", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
@@ -111,59 +109,59 @@ public class FailedSimulation extends Simulation {
                     BrowserDsl.browserAction("throwDriverException").open("https://docs.gatling1.io/"),
                     pause(1),
                     exec(session -> {
-                        assertTrue("LinkFailedOpen",session.isFailed());
+                        assertTrue("LinkFailedOpen", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
 
                     BrowserDsl.browserAction("actionMarkedIsKO").executeFlow(actionMarkedIsKO),
                     exec(session -> {
-                        assertTrue("actionMarkedIsKO",session.isFailed());
+                        assertTrue("actionMarkedIsKO", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwAssertionFailedError").executeFlow(throwAssertionFailedError),
                     exec(session -> {
-                        assertTrue("throwAssertionFailedError",session.isFailed());
+                        assertTrue("throwAssertionFailedError", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwAssertionFailedErrorWithExpected").executeFlow(throwAssertionFailedErrorWithExpected),
                     exec(session -> {
-                        assertTrue("throwAssertionFailedErrorWithExpected",session.isFailed());
+                        assertTrue("throwAssertionFailedErrorWithExpected", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwTimeoutError").executeFlow(throwTimeoutError),
                     exec(session -> {
-                        assertTrue("throwTimeoutError",session.isFailed());
+                        assertTrue("throwTimeoutError", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwTimeoutError2").executeFlow(throwTimeoutError2),
                     exec(session -> {
-                        assertTrue("throwTimeoutError2",session.isFailed());
+                        assertTrue("throwTimeoutError2", session.isFailed());
                         /// Reset session
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwDriverException").executeFlow(throwDriverException),
                     exec(session -> {
-                        assertTrue("throwDriverException",session.isFailed());
+                        assertTrue("throwDriverException", session.isFailed());
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwDriverException2").executeFlow(throwDriverException2),
                     exec(session -> {
-                        assertTrue("throwDriverException2",session.isFailed());
+                        assertTrue("throwDriverException2", session.isFailed());
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("throwClosedError").executeFlow(throwClosedError),
                     exec(session -> {
-                        assertTrue("throwClosedError",session.isFailed());
+                        assertTrue("throwClosedError", session.isFailed());
                         return session.markAsSucceeded();
                     }),
                     BrowserDsl.browserAction("crashAction").executeFlow(crashAction),
                     exec(session -> {
-                        assertTrue("crashAction",session.isFailed());
+                        assertTrue("crashAction", session.isFailed());
                         return session;
                     }),
                     exitHereIfFailed(),

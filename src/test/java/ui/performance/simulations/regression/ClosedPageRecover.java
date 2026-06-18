@@ -2,14 +2,10 @@ package ui.performance.simulations.regression;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Page;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
-import io.gatling.custom.browser.model.BrowserSession;
 import io.gatling.javaapi.core.ProtocolBuilder;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
-
-import java.util.function.BiFunction;
 
 import static io.gatling.javaapi.core.CoreDsl.*;
 
@@ -26,20 +22,11 @@ public class ClosedPageRecover extends Simulation {
             ////
             .buildProtocol();
 
-    BiFunction<Page, BrowserSession, BrowserSession> closePage = (page, browserSession) -> {
-
-        if (!browserSession.getJavaSession().isFailed()) {
-            page.close();
-            page.check("#locatorThatNotExist");
-        }
-        return browserSession;
-    };
-
     ScenarioBuilder mainScenario = scenario("test")
             .exec(
                     BrowserDsl.browserAction("SuccessAction").open("https://gatling.io/"),
                     pause(1),
-                    exec(session -> session.set("testValue","testValue")),
+                    exec(session -> session.set("testValue", "testValue")),
                     BrowserDsl.browserAction("FailedAction").executeFlow((page, browserSession) -> {
                         page.close();
                         page.check("#main-content");

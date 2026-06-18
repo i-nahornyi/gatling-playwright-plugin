@@ -37,7 +37,7 @@ class BrowserSimulationsScala extends Simulation {
 
     page.navigate("https://playwright.dev/java/docs/debug")
 
-    val session: Session = browserSession.getScalaSession().set("your_args", page.title())
+    val session: Session = browserSession.getGatlingSession.set("your_args", page.title())
     browserSession.updateBrowserSession(session)
   }
 
@@ -49,6 +49,7 @@ class BrowserSimulationsScala extends Simulation {
     def timing: Map[String, Double] = page.evaluate("performance.timing").asInstanceOf[java.util.Map[String, Double]].asScala.toMap
 
     browserSession.setActionStartTime(timing("navigationStart").asInstanceOf[Long])
+    browserSession.setActionStartTime()
     browserSession.setActionEndTime(timing("loadEventEnd").asInstanceOf[Long])
 
     browserSession
@@ -72,14 +73,14 @@ class BrowserSimulationsScala extends Simulation {
     //// If assertion fired, next code not executed
     //// and session will be lost
     //// solution look in [Example#3]
-    val session: Session = browserSession.getScalaSession().set("your_args", "Changed_args")
+    val session: Session = browserSession.getGatlingSession.set("your_args", "Changed_args")
 
     browserSession.updateBrowserSession(session)
   }
 
   //// [Example#5] How to execute browserSessionFunction
   def exampleBrowserSessionFunction(page: Page, browserSession: BrowserSession): BrowserSession = {
-    val session = browserSession.getScalaSession().set("pageTitle",page.title())
+    val session = browserSession.getGatlingSession.set("pageTitle",page.title())
 
     browserSession.updateBrowserSession(session)
   }

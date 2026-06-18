@@ -7,7 +7,7 @@ import com.microsoft.playwright.Page.NavigateOptions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import com.microsoft.playwright.options.WaitUntilState;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
-import io.gatling.custom.browser.model.BrowserSession;
+import io.gatling.custom.browser.javaapi.model.BrowserSession;
 import io.gatling.javaapi.core.*;
 import org.opentest4j.AssertionFailedError;
 
@@ -35,18 +35,18 @@ public class BrowserSimulationsJava extends Simulation {
         Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{url.exists()}");
         System.out.println(valueFromSession);
         /// Another one example
-        String anotherValueFromSession = browserSession.resolveSessionExpression(s -> s.getString("url") + "updated").toString();
+        String anotherValueFromSession = browserSession.resolveSessionValue(s -> s.getString("url") + "updated").toString();
         System.out.println(anotherValueFromSession);
 
         page.navigate("https://playwright.dev/java/docs/debug");
-        Session session = browserSession.getJavaSession().set("your_args", page.title());
+        Session session = browserSession.getGatlingSession().set("your_args", page.title());
         return browserSession.updateBrowserSession(session);
     };
 
 
     ///// [Example#2] How to set execution timing of action based on your logic
 
-    BiFunction<Page, BrowserSession, BrowserSession> exampleFlow2 = (page, browserSession) -> {
+    BiFunction<Page, io.gatling.custom.browser.javaapi.model.BrowserSession, io.gatling.custom.browser.javaapi.model.BrowserSession> exampleFlow2 = (page, browserSession) -> {
         page.navigate("https://playwright.dev/", new NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
 
         /// How to evaluate JS in playwrights see ===> https://playwright.dev/java/docs/evaluating
@@ -76,14 +76,14 @@ public class BrowserSimulationsJava extends Simulation {
         //// If assertion fired, next code not executed
         //// and session will be lost
         //// solution look in [Example#3]
-        Session session = browserSession.getJavaSession().set("your_args", "Changed_args");
+        Session session = browserSession.getGatlingSession().set("your_args", "Changed_args");
 
         return browserSession.updateBrowserSession(session);
     };
 
     //// [Example#5] How to execute browserSessionFunction
     BiFunction<Page, BrowserSession, BrowserSession> exampleBrowserSessionFunction = (page, browserSession) -> {
-        Session session = browserSession.getJavaSession().set("pageTitle", page.title());
+        Session session = browserSession.getGatlingSession().set("pageTitle", page.title());
 
         return browserSession.updateBrowserSession(session);
     };
