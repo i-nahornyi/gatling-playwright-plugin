@@ -4,8 +4,9 @@ import com.microsoft.playwright.Page;
 import io.gatling.custom.browser.javaapi.actions.ActionsBase;
 import io.gatling.custom.browser.javaapi.actions.BrowserClearContext;
 import io.gatling.custom.browser.javaapi.actions.BrowserSessionFunction;
+import io.gatling.custom.browser.javaapi.model.BrowserSession;
 import io.gatling.custom.browser.javaapi.protocol.BrowserProtocolBuilderBase;
-import io.gatling.custom.browser.model.BrowserSession;
+import io.gatling.custom.browser.javaapi.utils.Converter;
 import io.gatling.javaapi.core.Session;
 import io.gatling.javaapi.core.internal.Expressions;
 
@@ -32,8 +33,8 @@ public final class BrowserDsl {
         return new BrowserClearContext(io.gatling.custom.browser.Predef.browserCleanContext());
     }
 
-    public static BrowserSessionFunction browserSessionFunction(BiFunction<Page, BrowserSession, BrowserSession> function) {
-        return new BrowserSessionFunction(io.gatling.custom.browser.Predef.browserSessionFunction(function));
+    public static BrowserSessionFunction browserSessionFunction(BiFunction<Page,BrowserSession, BrowserSession> function) {
+        return new BrowserSessionFunction(io.gatling.custom.browser.Predef.browserSessionFunction(Converter.sessionFunctionToScala(function)));
     }
 
     public static String loadScript(String filePath){
