@@ -24,7 +24,7 @@ case class BrowserClearContext(ctx: ScenarioContext, next: Action) extends Chain
     if(browserActorPool.existActor(userId)){
 
       val browserActorWorker = browserActorPool.getActorById(userId)
-      val promise = browserActorWorker.replyPromise[BrowserCommandResponse](Constants.PROMISE_TIMEOUT)
+      val promise = browserActorWorker.replyPromise[Unit](Constants.PROMISE_TIMEOUT)
 
       browserActorWorker ! BrowserWorkerActor.ClosePage(promise)
       Await.result(promise.future, Constants.PROMISE_TIMEOUT)

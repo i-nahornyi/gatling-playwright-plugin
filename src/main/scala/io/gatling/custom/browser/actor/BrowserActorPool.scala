@@ -81,21 +81,21 @@ class BrowserActorPool(system: ActorSystem, baseName: String, launchOptions: Bro
 
   }
 
-  def getBrowserContext(actorId: Long): BrowserContext = {
+  private def getBrowserContext(actorId: Long): BrowserContext = {
     val actor = getActorById(actorId)
     val promise = actor.replyPromise[BrowserContext](timeout)
     actor ! BrowserWorkerActor.GetBrowserContext(promise)
     Await.result(promise.future, timeout)
   }
 
-  def recreateBrowser(actorId: Long): Unit = {
+  private def recreateBrowser(actorId: Long): Unit = {
     val actor = getActorById(actorId)
     val promise = actor.replyPromise[Browser](timeout)
     actor ! BrowserWorkerActor.RecreateBrowser(promise)
     Await.result(promise.future, timeout)
   }
 
-  def createNewPage(actorId: Long): Page = {
+  private def createNewPage(actorId: Long): Page = {
     val actor = getActorById(actorId)
     val promise = actor.replyPromise[Page](timeout)
     actor ! BrowserWorkerActor.CreateNewPage(promise)

@@ -19,23 +19,21 @@ object BrowserWorkerActor {
 
   sealed trait BrowserWorkerCommand
 
-  protected[browser] case class InitBrowserWorker[Unit](promise: Promise[Unit]) extends BrowserWorkerCommand
+  protected[browser] case class InitBrowserWorker(promise: Promise[Unit]) extends BrowserWorkerCommand
 
-  protected[browser] case class StopBrowserWorker[Unit](reason: String, promise: Promise[Unit]) extends BrowserWorkerCommand
+  protected[browser] case class StopBrowserWorker(reason: String, promise: Promise[Unit]) extends BrowserWorkerCommand
 
-  protected[browser] case class CreateNewPage[Page](promise: Promise[Page]) extends BrowserWorkerCommand
+  protected[browser] case class CreateNewPage(promise: Promise[Page]) extends BrowserWorkerCommand
 
-  protected[browser] case class ClosePage[Unit](promise: Promise[Unit]) extends BrowserWorkerCommand
+  protected[browser] case class ClosePage(promise: Promise[Unit]) extends BrowserWorkerCommand
 
-  protected[browser] case class GetBrowserContext[BrowserContext](promise: Promise[BrowserContext]) extends BrowserWorkerCommand
+  protected[browser] case class GetBrowserContext(promise: Promise[BrowserContext]) extends BrowserWorkerCommand
 
-  protected[browser] case class RecreateBrowser[Unit](promise: Promise[Unit]) extends BrowserWorkerCommand
+  protected[browser] case class RecreateBrowser(promise: Promise[Browser]) extends BrowserWorkerCommand
 
-  protected[browser] case class Navigate[ActorResponse](session: Session, resolvedRequestName: String, resolvedUrl: String, navigateOptions: Page.NavigateOptions, pageLoadValidator: PageLoadValidator, enableUIMetrics: Boolean, clock: Clock, promise: Promise[ActorResponse]) extends BrowserWorkerCommand
+  protected[browser] case class Navigate(session: Session, resolvedRequestName: String, resolvedUrl: String, navigateOptions: Page.NavigateOptions, pageLoadValidator: PageLoadValidator, enableUIMetrics: Boolean, clock: Clock, promise: Promise[BrowserCommandResponse]) extends BrowserWorkerCommand
 
-  protected[browser] case class ExecuteFlow[ActorResponse](session: Session, resolvedRequestName: String, function: BiFunction[Page, BrowserSession, BrowserSession], enableUIMetrics: Boolean, clock: Clock, promise: Promise[ActorResponse]) extends BrowserWorkerCommand
-
-  protected[browser] case class BrowserClearContext() extends BrowserWorkerCommand
+  protected[browser] case class ExecuteFlow(session: Session, resolvedRequestName: String, function: BiFunction[Page, BrowserSession, BrowserSession], enableUIMetrics: Boolean, clock: Clock, promise: Promise[BrowserCommandResponse]) extends BrowserWorkerCommand
 
   protected[browser] case class ActionStatus(var status: Status = OK, var message: Option[String] = Option.empty, var isCrashed: Boolean = false)
 
@@ -53,43 +51,43 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
 
   override def init(): Behavior[BrowserWorkerCommand] = {
 
-    case commandContext: InitBrowserWorker[Unit] =>
+    case commandContext: InitBrowserWorker =>
       logger.trace(s"${Thread.currentThread().getName} ===> Create BrowserWorkerActor name=$actorName")
       playwright = Playwright.create()
       browser = playwright.chromium().launch(launchOptions)
       browserContext = browser.newContext(contextOptions)
       page = browserContext.newPage()
-      commandContext.promise.trySuccess()
+      commandContext.promise.trySuccess(())
       stay
 
-    case commandContext: GetBrowserContext[BrowserContext] =>
+    case commandContext: GetBrowserContext =>
       commandContext.promise.complete(Try(browserContext))
       stay
 
-    case commandContext: RecreateBrowser[Browser] =>
+    case commandContext: RecreateBrowser =>
       browser = playwright.chromium().launch(launchOptions)
       commandContext.promise.complete(Try(browser))
       stay
 
-    case commandContext: CreateNewPage[Page] =>
+    case commandContext: CreateNewPage =>
       browserContext = browser.newContext(contextOptions)
       page = browserContext.newPage()
       commandContext.promise.complete(Try(page))
       stay
 
-    case commandContext: ClosePage[Unit] =>
+    case commandContext: ClosePage =>
       page.context().close(new BrowserContext.CloseOptions().setReason("Closing due to the BrowserActionsClearContext action"))
-      commandContext.promise.trySuccess()
+      commandContext.promise.trySuccess(())
       stay
 
-    case commandContext: StopBrowserWorker[Unit] =>
+    case commandContext: StopBrowserWorker =>
       browser.close(new Browser.CloseOptions().setReason(commandContext.reason))
       playwright.close()
-      commandContext.promise.trySuccess()
+      commandContext.promise.trySuccess(())
       die
 
 
-    case commandContext: Navigate[BrowserCommandResponse] =>
+    case commandContext: Navigate =>
 
       var actionStatus: ActionStatus = ActionStatus()
       val currentSession = commandContext.session
@@ -114,7 +112,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
       }
       stay
 
-    case commandContext: ExecuteFlow[BrowserCommandResponse] =>
+    case commandContext: ExecuteFlow =>
 
       var actionStatus: ActionStatus = ActionStatus()
       var currentSession = commandContext.session
