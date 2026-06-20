@@ -1,5 +1,6 @@
 package io.gatling.custom.browser.javaapi.model;
 
+import io.gatling.commons.stats.Status;
 import io.gatling.javaapi.core.Session;
 import io.gatling.javaapi.core.internal.Expressions;
 import scala.Option;
@@ -34,8 +35,16 @@ public class BrowserSession {
         return wrapped.resolveSessionValue(Expressions.javaFunctionToExpression(function));
     }
 
+    public void setActionStartTime() {
+        wrapped.setActionStartTime();
+    }
+
     public void setActionStartTime(long currentTime) {
         wrapped.setActionStartTime(currentTime);
+    }
+
+    public void setActionEndTime() {
+        wrapped.setActionEndTime();
     }
 
     public void setActionEndTime(long currentTime) {
@@ -51,8 +60,20 @@ public class BrowserSession {
         return wrapped.getActionStartTime();
     }
 
+    public void setStatusOK() {
+        wrapped.setStatusOK();
+    }
+
+    public void setStatusKO() {
+        wrapped.setStatusKO();
+    }
+
     public void setStatusKO(String errorMessage) {
         wrapped.setStatusKO(errorMessage);
+    }
+
+    public Status getStatus() {
+        return wrapped.getStatus();
     }
 
     public Option<String> getErrorMessage() {
