@@ -12,9 +12,13 @@ ProtocolBuilder browserProtocol = BrowserDsl
         .withLaunchOptions(new LaunchOptions().setHeadless(false))
         .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
         .enableUIMetrics()
+        .withDefaultTimeout(15000)
         //
         .buildProtocol();
 ```
+
+`.withDefaultTimeout(millis)` sets a default action/navigation timeout for every browser action — see
+[Timeouts](./Timeouts.md) for how it interacts with `open`/`executeFlow`.
 
 ## Action name
 
@@ -40,7 +44,7 @@ BrowserDsl.browserAction("name").open(session -> session.getString("url")
 ```
 
 It is possible to set additional **navigation** options or page load **validation**.
-See the NavigateOptions documentation [here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.46.0/com/microsoft/playwright/Page.NavigateOptions.html).
+See the NavigateOptions documentation [here](https://javadoc.io/doc/com.microsoft.playwright/playwright/1.62.0/com/microsoft/playwright/Page.NavigateOptions.html).
 ```java
 BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD))
 ```
@@ -66,6 +70,9 @@ similar that make sitespeed tool
 BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations())
 ```
 
+**Timeouts:** see [Timeouts](./Timeouts.md) — `open` is bounded by Playwright's own navigation timeout, not
+a plugin-level one.
+
 ## Flow Action
 
 Sometimes, you need to verify that a page has loaded programmatically. In such cases, you can use a script.
@@ -79,6 +86,9 @@ BrowserDsl.browserAction("test").executeFlow((page, browserSession) -> {
     return browserSession;
 });
 ```
+
+**Timeouts:** see [Timeouts](./Timeouts.md) — the same Playwright-native timeout rules apply to calls you
+make on `page` inside `executeFlow`, and callbacks must avoid blocking outside of them.
 
 For **advanced** example see [this guide](./FlowActionAdvanced.md)
 

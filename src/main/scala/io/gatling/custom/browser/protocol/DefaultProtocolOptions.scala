@@ -13,5 +13,7 @@ object DefaultProtocolOptions {
   var defaultResourceInactivityTime = 500
   //
   var defaultWebVitalsEnable: Boolean = false
+  // Forwarded to BrowserContext.setDefaultTimeout/setDefaultNavigationTimeout on every
+  var defaultTimeout: Option[Double] = None
 
 }

@@ -11,7 +11,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
-class BrowserActorPool(system: ActorSystem, baseName: String, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions) extends StrictLogging {
+class BrowserActorPool(system: ActorSystem, baseName: String, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, defaultTimeout: Option[Double] = None) extends StrictLogging {
 
 
   private val actorMap = new ConcurrentHashMap[Long, ActorRef[BrowserWorkerActor.BrowserWorkerCommand]]().asScala
@@ -21,7 +21,7 @@ class BrowserActorPool(system: ActorSystem, baseName: String, launchOptions: Bro
 
   def createActor(actorId: Long): ActorRef[BrowserWorkerActor.BrowserWorkerCommand] = actorMap.getOrElseUpdate(actorId, {
     val actorName = s"$baseName-$actorId"
-    val actor = new BrowserWorkerActor(actorName, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions)
+    val actor = new BrowserWorkerActor(actorName, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, defaultTimeout)
     actor.init()
     val actorRef = system.actorOf(actor)
     val promise = actorRef.replyPromise[Unit](timeout)

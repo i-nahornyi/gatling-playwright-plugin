@@ -3,6 +3,7 @@ package io.gatling.custom.browser.javaapi.protocol;
 import com.microsoft.playwright.Browser.NewContextOptions;
 import com.microsoft.playwright.BrowserType.LaunchOptions;
 import io.gatling.custom.browser.protocol.DefaultProtocolOptions;
+import scala.Option;
 
 public class BrowserProtocolBuilderBase {
 
@@ -11,6 +12,7 @@ public class BrowserProtocolBuilderBase {
     LaunchOptions launchOptions = DefaultProtocolOptions.defaultProtocolOptions() ;
     NewContextOptions contextOptions = DefaultProtocolOptions.defaultContextOptions();
     Boolean webVitalsEnable = DefaultProtocolOptions.defaultWebVitalsEnable();
+    Double defaultTimeout = null;
 
     public BrowserProtocolBuilderBase() {
         this.wrapped = buildProtocol();
@@ -30,8 +32,13 @@ public class BrowserProtocolBuilderBase {
         return this;
     }
 
+    public BrowserProtocolBuilderBase withDefaultTimeout(double timeoutMillis){
+        this.defaultTimeout = timeoutMillis;
+        return this;
+    }
+
     public BrowserProtocolBuilder buildProtocol(){
-        return new BrowserProtocolBuilder(new io.gatling.custom.browser.protocol.BrowserProtocolBuilder(launchOptions,contextOptions, webVitalsEnable));
+        return new BrowserProtocolBuilder(new io.gatling.custom.browser.protocol.BrowserProtocolBuilder(launchOptions, contextOptions, webVitalsEnable, Option.apply(defaultTimeout)));
     }
 
 }

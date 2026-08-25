@@ -9,7 +9,7 @@ import io.gatling.custom.browser.actor.BrowserActorPool
 import io.gatling.custom.browser.stats.UIMetricFileWriter
 import io.gatling.custom.browser.utils.Constants
 
-case class BrowserProtocol(options: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, enableUIMetrics: Boolean) extends Protocol {
+case class BrowserProtocol(options: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, enableUIMetrics: Boolean, defaultTimeout: Option[Double] = None) extends Protocol {
   type Component = BrowserComponent
 }
 
@@ -18,11 +18,11 @@ object BrowserProtocol extends StrictLogging {
     override def protocolClass: Class[Protocol] = classOf[BrowserProtocol].asInstanceOf[Class[Protocol]]
 
     override def defaultProtocolValue(configuration: GatlingConfiguration): BrowserProtocol = {
-      BrowserProtocol(DefaultProtocolOptions.defaultProtocolOptions, DefaultProtocolOptions.defaultContextOptions, DefaultProtocolOptions.defaultWebVitalsEnable)
+      BrowserProtocol(DefaultProtocolOptions.defaultProtocolOptions, DefaultProtocolOptions.defaultContextOptions, DefaultProtocolOptions.defaultWebVitalsEnable, DefaultProtocolOptions.defaultTimeout)
     }
 
     override def newComponents(coreComponents: CoreComponents): BrowserProtocol => BrowserComponent = browserProtocol => {
-      val browserActorPool = new BrowserActorPool(coreComponents.actorSystem, Constants.BROWSER_ACTOR_POOL_NAME, browserProtocol.options,browserProtocol.contextOptions)
+      val browserActorPool = new BrowserActorPool(coreComponents.actorSystem, Constants.BROWSER_ACTOR_POOL_NAME, browserProtocol.options, browserProtocol.contextOptions, browserProtocol.defaultTimeout)
       val browserComponent = BrowserComponent(browserProtocol.enableUIMetrics, browserActorPool)
 
       coreComponents.actorSystem.registerOnTermination({

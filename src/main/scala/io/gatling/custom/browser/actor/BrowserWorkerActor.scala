@@ -41,13 +41,19 @@ object BrowserWorkerActor {
 
 case class BrowserCommandResponse(var startTime: Long, var endTime: Long, var session: Session, var actionStatus: ActionStatus)
 
-class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions) extends Actor[BrowserWorkerCommand](actorName) {
+class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, defaultTimeout: Option[Double] = None) extends Actor[BrowserWorkerCommand](actorName) {
 
   private var playwright: Playwright = _
   private var browser: Browser = _
   private var browserContext: BrowserContext = _
   private var page: Page = _
 
+  private def applyDefaultTimeout(context: BrowserContext): Unit = {
+    defaultTimeout.foreach { timeoutMillis =>
+      context.setDefaultTimeout(timeoutMillis)
+      context.setDefaultNavigationTimeout(timeoutMillis)
+    }
+  }
 
   override def init(): Behavior[BrowserWorkerCommand] = {
 
@@ -56,6 +62,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
       playwright = Playwright.create()
       browser = playwright.chromium().launch(launchOptions)
       browserContext = browser.newContext(contextOptions)
+      applyDefaultTimeout(browserContext)
       page = browserContext.newPage()
       commandContext.promise.trySuccess(())
       stay
@@ -71,6 +78,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
 
     case commandContext: CreateNewPage =>
       browserContext = browser.newContext(contextOptions)
+      applyDefaultTimeout(browserContext)
       page = browserContext.newPage()
       commandContext.promise.complete(Try(page))
       stay
