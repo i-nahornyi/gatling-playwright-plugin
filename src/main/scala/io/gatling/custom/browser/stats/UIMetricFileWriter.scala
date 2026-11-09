@@ -1,11 +1,12 @@
 package io.gatling.custom.browser.stats
 
+import com.typesafe.scalalogging.StrictLogging
 import io.gatling.custom.browser.utils.DirUtils
 
 import java.io.{BufferedWriter, FileWriter}
 import java.util.concurrent.{ConcurrentLinkedQueue, Executors, TimeUnit}
 
-object UIMetricFileWriter {
+object UIMetricFileWriter extends StrictLogging {
 
   private val latestCreatedSubdirName = DirUtils.latestGatlingRun().get
   private val file = new BufferedWriter(new FileWriter(s"$latestCreatedSubdirName/ui_metrics.csv", true))
@@ -26,15 +27,21 @@ object UIMetricFileWriter {
     file.close()
   }
   private def flushQueue(): Unit = {
-    var entry = queue.poll()
-    var wrote = false
+    try {
+      var entry = queue.poll()
+      var wrote = false
 
-    while (entry != null) {
-      file.write(entry)
-      wrote = true
-      entry = queue.poll()
+      while (entry != null) {
+        file.write(entry)
+        wrote = true
+        entry = queue.poll()
+      }
+
+      if (wrote) file.flush()
     }
-
-    if (wrote) file.flush()
+    catch {
+      case exception: Throwable =>
+        logger.error(s"Failed to flush UI metrics to file, metrics may be lost: ${exception.getMessage}", exception)
+    }
   }
 }
