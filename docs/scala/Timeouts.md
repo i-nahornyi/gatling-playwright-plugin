@@ -15,7 +15,6 @@ val browserProtocol: Protocol = gatlingBrowser
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
     .withDefaultTimeout(15000)
-    .buildProtocol()
 ```
 
 ## Overriding it for a single `open()` call

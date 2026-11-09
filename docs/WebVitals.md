@@ -10,8 +10,7 @@ Ensure UI metrics are enabled in your protocol builder:
 
 ```java
 ProtocolBuilder browserProtocol = BrowserDsl.gatlingBrowser()
-        .enableUIMetrics()
-        .buildProtocol();
+        .enableUIMetrics();
 ```
 
 ---

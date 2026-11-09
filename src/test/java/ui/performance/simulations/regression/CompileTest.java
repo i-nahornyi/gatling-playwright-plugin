@@ -21,6 +21,7 @@ public class CompileTest extends Simulation {
             .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
             .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080).setIsMobile(false))
             .enableUIMetrics()
+            .withDefaultTimeout(300000)
             .buildProtocol();
 
     String customValidationScript = BrowserDsl.loadScript("scripts/home_page_load.js");

@@ -15,8 +15,7 @@ ProtocolBuilder browserProtocol = BrowserDsl
         .gatlingBrowser()
         .withLaunchOptions(new LaunchOptions().setHeadless(false))
         .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
-        .withDefaultTimeout(15000)
-        .buildProtocol();
+        .withDefaultTimeout(15000);
 ```
 
 ## Overriding it for a single `open()` call

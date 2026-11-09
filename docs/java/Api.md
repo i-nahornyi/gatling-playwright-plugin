@@ -12,13 +12,15 @@ ProtocolBuilder browserProtocol = BrowserDsl
         .withLaunchOptions(new LaunchOptions().setHeadless(false))
         .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
         .enableUIMetrics()
-        .withDefaultTimeout(15000)
-        //
-        .buildProtocol();
+        .withDefaultTimeout(15000);
 ```
 
 `.withDefaultTimeout(millis)` sets a default action/navigation timeout for every browser action — see
 [Timeouts](./Timeouts.md) for how it interacts with `open`/`executeFlow`.
+
+> `.buildProtocol()` is **deprecated** and no longer needed — the builder itself implements
+> `ProtocolBuilder` and can be assigned/passed directly (as above). It still works if you're calling it
+> explicitly in existing code, just unnecessary going forward.
 
 ## Action name
 
