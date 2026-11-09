@@ -1,1 +1,2 @@
+#!/usr/bin/env bash
 ./mvnw -s setting.xml clean scala:compile scala:doc-jar deploy

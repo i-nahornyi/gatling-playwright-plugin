@@ -13,14 +13,12 @@ Follow the setup instructions in [docs](./docs/README.md).
 
 ## 📌 Roadmap
 
-Planned and completed features:
+Completed features:
 
-✅ Java API
-✅ Multithreading support
-✅ WebVitals tracking
-✅ Example test cases  
-✅ Docker image for simplified usage
-
+- Java API
+- Multithreading support
+- WebVitals tracking
+- Example test cases
 
 ## 🤝 Contribution
 

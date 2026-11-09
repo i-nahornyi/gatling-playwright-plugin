@@ -7,9 +7,10 @@ public class Runner {
 
     // BrowserSimulationsJava
     // BrowserSimulationsScala
+    // regression.CompileTest
     // regression.ClosedModelBrowser
     // regression.FailedSimulation
-    // regression.ClosedPageRecover
+    // regression.TargetClosedErrorRecover
     // regression.Smoke
     // regression.WebVitalsJava
     // regression.WebVitalsScala
