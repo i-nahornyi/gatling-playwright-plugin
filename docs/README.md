@@ -9,16 +9,21 @@ To use the Gatling Playwright Plugin, add the following dependency
 <dependency>
     <groupId>io.github.i-nahornyi</groupId>
     <artifactId>gatling-playwright-plugin</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```
-gatling group: 'io.github.i-nahornyi', name: 'gatling-playwright-plugin', version: '0.1.4'
+gatling group: 'io.github.i-nahornyi', name: 'gatling-playwright-plugin', version: '0.1.5'
 ```
 
+
+## For AI assistants
+
+[llms.txt](./llms.txt) is a single-file reference covering the full Java/Scala DSL, meant to be handed
+to an AI assistant writing Gatling simulations against this plugin.
 
 ## Usage
 

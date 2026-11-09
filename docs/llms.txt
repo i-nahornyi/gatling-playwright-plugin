@@ -1,0 +1,298 @@
+# gatling-playwright-plugin
+
+> A Gatling plugin (`io.github.i-nahornyi:gatling-playwright-plugin`) that adds Playwright-driven
+> browser actions to Gatling load-test scenarios — open a URL, run a scripted Playwright flow, clean up
+> the browser context — and reports page-level UI metrics (TTFB, LCP, CLS, INP, FCP) alongside Gatling's
+> normal stats. One real Playwright browser per virtual user. Compatible with Gatling 3.12.0; other
+> Gatling versions aren't guaranteed to work. Requires Java 17.
+
+This file is a self-contained reference for an AI assistant writing Gatling simulations against this
+plugin's public DSL — it inlines the full API surface (both Java and Scala) in one place instead of
+linking out. For narrower topic pages, the canonical docs live under `docs/` in this repo:
+`docs/README.md` (install), `docs/java/Api.md` / `docs/scala/Api.md` (DSL overview with links to one
+page per action), `docs/WebVitals.md` (UI metrics).
+
+## Install
+
+Maven:
+```xml
+<dependency>
+    <groupId>io.github.i-nahornyi</groupId>
+    <artifactId>gatling-playwright-plugin</artifactId>
+    <version>0.1.5</version>
+</dependency>
+```
+Gradle: `gatling group: 'io.github.i-nahornyi', name: 'gatling-playwright-plugin', version: '0.1.5'`
+(check Maven Central for the latest version). Entry points: `io.gatling.custom.browser.javaapi.BrowserDsl`
+(Java, static methods) and `io.gatling.custom.browser.Predef._` (Scala, import then use top-level names).
+
+## Mental model
+
+- One Playwright `Browser`/`BrowserContext`/`Page` per Gatling virtual user, kept alive across actions
+  in that user's scenario (not recreated per action). It self-heals if the browser/page/context gets
+  closed (crash, or your own code closing it) — the next action on that user transparently relaunches.
+- `open` and `executeFlow` are tracked as normal Gatling requests (show up in stats/reports);
+  `browserSessionFunction` is not tracked, for page manipulation you don't want counted as a step.
+- A failed `open`/`executeFlow` marks the Gatling session failed (like `exitHereIfFailed` territory)
+  unless you catch the failure yourself inside `executeFlow` via `BrowserSession.setStatusKO`.
+- No plugin-level timeout exists or is planned — `open`/`executeFlow` are bounded only by whatever
+  timeout the Playwright call itself uses (30s default, or `.withDefaultTimeout(millis)` on the
+  protocol, or a per-call `NavigateOptions`/`ClickOptions().setTimeout(...)`). Never pass
+  `setTimeout(0)` in a load test. See "Timeouts" below.
+- Inside `executeFlow`/`browserSessionFunction`, don't fan out your own concurrency against `page` (one
+  actor owns one `Page`, so work for a given virtual user is inherently sequential) and don't block with
+  anything that isn't a timeout-aware Playwright call (your own infinite loop or blocking I/O can hang
+  that virtual user forever — nothing in the plugin can bound that).
+
+## Browser Protocol setup
+
+Java:
+```java
+import io.gatling.custom.browser.javaapi.BrowserDsl;
+import io.gatling.javaapi.core.ProtocolBuilder;
+
+ProtocolBuilder browserProtocol = BrowserDsl
+        .gatlingBrowser()
+        // Optional setup block
+        .withLaunchOptions(new LaunchOptions().setHeadless(false))
+        .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080).setIsMobile(true))
+        .enableUIMetrics()
+        .withDefaultTimeout(15000);
+
+setUp(mainScenario.injectOpen(atOnceUsers(1))).protocols(browserProtocol);
+```
+
+Scala:
+```scala
+import io.gatling.custom.browser.Predef._
+
+val browserProtocol: Protocol = gatlingBrowser
+    //// This part of setup block is optional
+    .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
+    .withLaunchOptions(new LaunchOptions().setHeadless(false))
+    .enableUIMetrics()
+    .withDefaultTimeout(15000)
+    ////
+
+setUp(mainScenario.inject(atOnceUsers(1))).protocols(browserProtocol)
+```
+
+Builder methods (both languages, chainable, all optional):
+- `withLaunchOptions(LaunchOptions)` — Playwright `BrowserType.LaunchOptions` (e.g. `setHeadless`).
+- `withContextOptions(NewContextOptions)` — Playwright `Browser.NewContextOptions` (e.g.
+  `setViewportSize`, `setIsMobile`).
+- `enableUIMetrics()` — turn on web-vitals collection for `open` actions, see "UI metrics" below.
+- `withDefaultTimeout(millis)` — forwards to Playwright's own
+  `BrowserContext.setDefaultTimeout`/`setDefaultNavigationTimeout` on every context the plugin creates,
+  so you don't have to repeat `NavigateOptions.setTimeout(...)` on every `open()` call.
+
+`.buildProtocol()` **is deprecated and no longer necessary** — the builder itself converts/implements
+the type Gatling's `.protocols(...)`/`setUp(...)` expects directly (an implicit conversion in Scala, the
+`ProtocolBuilder` interface in Java). Only write `.buildProtocol()` if matching older example code; new
+code should omit it, as in the two snippets above.
+
+## Action name
+
+Every action takes a name (shown in Gatling stats), which can be a literal, a Gatling EL string, or a
+function of the session:
+
+Java: `BrowserDsl.browserAction("HomePage")` / `BrowserDsl.browserAction("#{actionName}")` /
+`BrowserDsl.browserAction(session -> session.getString("actionName"))`
+
+Scala: `browserAction("HomePage")` / `browserAction("#{actionName}")` /
+`browserAction(session => session("actionName").as[String])`
+
+## Actions
+
+| Action | Tracked in reports? | Purpose |
+|---|---|---|
+| `open` | yes | Navigate to a URL |
+| `executeFlow` | yes | Run an arbitrary scripted Playwright flow against `page` |
+| `browserSessionFunction` | no | Manipulate the page/session without tracking a step |
+| `browserCleanContext` | n/a | Close and recreate the Playwright `BrowserContext` (e.g. end of a loop) |
+
+### Open
+
+Java:
+```java
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/");                 // static URL
+BrowserDsl.browserAction("name").open("#{url}");                                    // EL string
+BrowserDsl.browserAction("name").open(session -> session.getString("url"));         // function
+
+// Optional: Playwright NavigateOptions
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/")
+        .withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD));
+
+// Optional: load validation — a custom JS "is the page ready" expression, polled via page.waitForFunction
+PageLoadValidator v = new PageLoadValidator(validationScriptJs, null,
+        new Page.WaitForFunctionOptions().setPollingInterval(100).setTimeout(30000));
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations(v);
+
+// Optional: load validation using the plugin's built-in "resource inactivity" default script
+BrowserDsl.browserAction("name").open("https://docs.gatling.io/").withLoadValidations();
+```
+
+Scala:
+```scala
+browserAction("name").open("https://docs.gatling.io/")
+browserAction("name").open("#{url}")
+browserAction("name").open(session => session("url").as[String])
+
+browserAction("name").open("https://docs.gatling.io/").withNavigateOptions(new Page.NavigateOptions().setWaitUntil(LOAD))
+
+val v = PageLoadValidator(validationScriptJs, null, new Page.WaitForFunctionOptions().setPollingInterval(100).setTimeout(30000))
+browserAction("name").open("https://gatling.io/").withLoadValidations(v)
+
+browserAction("name").open("https://docs.gatling.io/").withLoadValidations()
+```
+
+### Flow (`executeFlow`)
+
+Runs a `(Page, BrowserSession) -> BrowserSession` callback. **Always return `browserSession`** (or the
+result of `browserSession.updateBrowserSession(...)` if you changed anything) — nothing is persisted
+otherwise, same rule as returning a new `Session` from a plain Gatling `exec`.
+
+Java:
+```java
+BrowserDsl.browserAction("test").executeFlow((page, browserSession) -> {
+    page.navigate("https://docs.gatling.io/");
+    page.locator("//*[@id=\"ai-initial-message\"]").isVisible();
+    return browserSession;
+});
+```
+
+Scala:
+```scala
+browserAction("test").executeFlow((page, browserSession) => {
+    page.navigate("https://docs.gatling.io/")
+    page.locator("//*[@id=\"ai-initial-message\"]").isVisible()
+    browserSession
+})
+```
+
+Reading/writing the Gatling session inside the callback (Java):
+```java
+Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{url.exists()}");
+String another = browserSession.resolveSessionValue(s -> s.getString("url") + "updated").toString();
+Session session = browserSession.getGatlingSession().set("your_args", page.title());
+return browserSession.updateBrowserSession(session);
+```
+Scala:
+```scala
+val valueFromSession = browserSession.resolveSessionValue("#{url.exists()}")
+val modified = browserSession.resolveSessionValue(session => s"${session("url").as[String]}updated")
+val session: Session = browserSession.getGatlingSession.set("your_args", page.title())
+browserSession.updateBrowserSession(session)
+```
+
+Overriding reported action timing (e.g. from `page.evaluate("performance.timing")`) — Java:
+```java
+browserSession.setActionStartTime(timing.get("navigationStart").longValue());
+browserSession.setActionEndTime(timing.get("loadEventEnd").longValue());
+```
+Scala:
+```scala
+browserSession.setActionStartTime(timing("navigationStart").asInstanceOf[Long])
+browserSession.setActionEndTime(timing("loadEventEnd").asInstanceOf[Long])
+```
+
+Handling an assertion/error and marking KO yourself (Java):
+```java
+try {
+    PlaywrightAssertions.assertThat(page).hasTitle("expected");
+} catch (AssertionFailedError e) {
+    browserSession.setStatusKO("custom failure reason");
+}
+return browserSession;
+```
+Scala:
+```scala
+try {
+  PlaywrightAssertions.assertThat(page).hasTitle("expected")
+} catch {
+  case _: AssertionFailedError => browserSession.setStatusKO("custom failure reason")
+}
+browserSession
+```
+Important: `setStatusKO(...)` does **not** stop the callback or throw — code after it still runs — and
+it does not retroactively mark `browserSession.getGatlingSession().isFailed()` true either; the plugin
+applies that to the Gatling session only *after* the callback returns. To bail out of the rest of the
+callback, use a plain early `return`. To skip risky work in a *later* action once an earlier one already
+failed, check `getGatlingSession().isFailed()` at the top of that later `executeFlow`.
+
+### Browser Session Function
+
+Like `executeFlow`, but not tracked as a Gatling request — for extracting data / manipulating the page
+without counting it as a step.
+
+Java: `BrowserDsl.browserSessionFunction((page, browserSession) -> { Session s = browserSession.getGatlingSession().set("pageTitle", page.title()); return browserSession.updateBrowserSession(s); });`
+
+Scala: `browserSessionFunction((page, browserSession) => { val s = browserSession.getGatlingSession.set("pageTitle", page.title()); browserSession.updateBrowserSession(s) })`
+
+### Clean Context
+
+Closes and recreates the Playwright `BrowserContext` for the current virtual user — typically at the
+end of a loop iteration, to start the next iteration with a clean context.
+
+Java: `BrowserDsl.browserCleanContext()`  ·  Scala: `browserCleanContext()`
+
+## BrowserSession reference
+
+Passed into `executeFlow`/`browserSessionFunction`. Wraps the Gatling `Session` immutably — like
+Gatling's own `Session`, no method mutates in place; always capture and return the result of
+`updateBrowserSession(...)` to persist a change.
+
+| Concern | Java | Scala | Notes |
+|---|---|---|---|
+| Read session | `getGatlingSession()` → `Session` | `getGatlingSession` → `Session` | read-only |
+| Read one attribute | — | `getGatlingSession(name: String)` → `SessionAttribute` | Scala only |
+| Persist a change | `updateBrowserSession(Session)` → `BrowserSession` | same | **must return this** |
+| Resolve EL expr | `resolveSessionValue(String)` → `Object` | `resolveSessionValue(String)` → `Any` | e.g. `"#{url}"` |
+| Resolve via function | `resolveSessionValue(Function<Session,Object>)` | `resolveSessionValue(Expression[Any])` | |
+| Set start time (now) | `setActionStartTime()` | same | |
+| Set start time (explicit) | `setActionStartTime(long)` | `setActionStartTime(Long)` | epoch millis |
+| Get start time | `getActionStartTime()` → `long` | `getActionStartTime` → `Long` | `0` if never set |
+| Set end time (now) | `setActionEndTime()` | same | |
+| Set end time (explicit) | `setActionEndTime(long)` | `setActionEndTime(Long)` | epoch millis |
+| Get end time | `getActionEndTime()` → `long` | `getActionEndTime` → `Long` | `0` if never set |
+| Mark OK | `setStatusOK()` | same | |
+| Mark KO | `setStatusKO()` / `setStatusKO(String)` | same | |
+| Get status | `getStatus()` | `getStatus` | `Status` OK/KO |
+| Get error message | `getErrorMessage()` → `Optional`-like Scala `Option<String>` (check `.isDefined()` then `.get()`) | `getErrorMessage` → `Option[String]` | |
+
+## Timeouts
+
+There is no plugin-level timeout and none is planned — a stuck `open`/`executeFlow` is bounded only by
+whatever timeout the underlying Playwright call uses, exactly like plain Playwright:
+
+- Protocol-wide default: `.withDefaultTimeout(millis)` on the protocol builder (see above) — applies to
+  every context the plugin creates.
+- Per-`open()` override: `.withNavigateOptions(new Page.NavigateOptions().setTimeout(5000))` — wins over
+  the protocol default for that one call.
+- Per-call override inside `executeFlow`: pass `*Options().setTimeout(...)` on the individual Playwright
+  call (`page.locator(...).click(new Locator.ClickOptions().setTimeout(5000))`), same as plain Playwright.
+
+A navigation/call that exceeds its timeout throws Playwright's own `TimeoutError`, which the plugin
+reports as a clean KO on that action — it does not hang the virtual user. **Never pass `setTimeout(0)`**
+in a load test (it disables the safety net), and never block inside `executeFlow`/
+`browserSessionFunction` with anything that isn't a timeout-aware Playwright call.
+
+## UI metrics (web vitals)
+
+Enable with `.enableUIMetrics()` on the protocol builder. Collected only for `open` actions: FCP, LCP,
+CLS, INP, TTFB. Written as CSV (`MetricType,timestamp,actionName,status,metricName,value`, e.g.
+`WEB_VITALS,1757624157101,homePage,OK,FCP,1042`) to `ui_metrics.csv` in the current Gatling run's results
+directory (`target/gatling/<run>/` for Maven, `reports/gatling/<run>/` for Gradle) — read it alongside
+the normal Gatling HTML report.
+
+## Full docs in this repo
+
+`docs/README.md` (install/getting started) · `docs/java/Api.md` / `docs/scala/Api.md` (DSL overview) ·
+`docs/java/OpenAction.md` / `docs/scala/OpenAction.md` · `docs/java/FlowAction.md` /
+`docs/scala/FlowAction.md` (+ `FlowActionAdvanced.md` for more examples) ·
+`docs/java/BrowserSessionFunction.md` / `docs/scala/BrowserSessionFunction.md` ·
+`docs/java/CleanContext.md` / `docs/scala/CleanContext.md` · `docs/java/BrowserSession.md` /
+`docs/scala/BrowserSession.md` · `docs/java/Timeouts.md` / `docs/scala/Timeouts.md` ·
+`docs/WebVitals.md`. End-to-end example simulations:
+`src/test/java/ui/performance/simulations/BrowserSimulationsJava.java` /
+`src/test/scala/ui/performance/simulations/BrowserSimulationsScala.scala`.
