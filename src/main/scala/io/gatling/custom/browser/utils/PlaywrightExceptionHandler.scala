@@ -7,6 +7,8 @@ import io.gatling.commons.stats.KO
 import io.gatling.custom.browser.actor.BrowserWorkerActor.ActionStatus
 import org.opentest4j.AssertionFailedError
 
+import scala.util.Try
+
 object PlaywrightExceptionHandler extends StrictLogging {
 
 
@@ -45,27 +47,39 @@ object PlaywrightExceptionHandler extends StrictLogging {
       .trim
   }
 
+  // Wrapped in Try: the indices below assume Playwright's error message keeps the structure
+  // documented above, which isn't guaranteed across Playwright versions/locales. A malformed
+  // message used to throw (e.g. ArrayIndexOutOfBoundsException) from inside this method, which is
+  // itself called from inside a catch block in BrowserWorkerActor with no handler around it —
+  // silently hanging the virtual user instead of reporting a clean KO. On any parse failure, fall
+  // back to a short generic message (the caller already logs the raw message at DEBUG) rather than
+  // surfacing the full, potentially multi-line raw message as the KO reason.
   private def parseErrorMessage(rawErrorMessage: String, errorType: String): Option[String] = {
+    Try {
+      val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
 
-    val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
+      if (checkIsStandardFormat) {
+        val messagePart = rawErrorMessage.split(SPLITTER_STRING)
 
-    if (checkIsStandardFormat) {
-      val messagePart = rawErrorMessage.split(SPLITTER_STRING)
-
-      val reasonText = sanitizeString(messagePart.head.split("\n").apply(1))
-      val locatorText = sanitizeString(messagePart.apply(1).split("\n").apply(0))
-      Option.apply(s"$reasonText $locatorText")
-
-    }
-    else {
-      val checkIsCanExtactErrorMessage = rawErrorMessage.contains(REASON_PART_START)
-
-      if (checkIsCanExtactErrorMessage){
-        val reasonText = sanitizeString(rawErrorMessage.split("\n").apply(1))
-        return Option.apply(s"$reasonText")
+        val reasonText = sanitizeString(messagePart.head.split("\n").apply(1))
+        val locatorText = sanitizeString(messagePart.apply(1).split("\n").apply(0))
+        s"$reasonText $locatorText"
       }
-      Option.apply(s"Action: throw $errorType")
-    }
+      else {
+        val checkIsCanExtactErrorMessage = rawErrorMessage.contains(REASON_PART_START)
+
+        if (checkIsCanExtactErrorMessage) {
+          sanitizeString(rawErrorMessage.split("\n").apply(1))
+        }
+        else {
+          s"Action: throw $errorType"
+        }
+      }
+    }.recover {
+      case exception: Throwable =>
+        logger.debug(s"Failed to parse $errorType message, raw message was:\n$rawErrorMessage", exception)
+        s"Action: throw $errorType"
+    }.toOption
   }
 
   /*
@@ -94,21 +108,29 @@ object PlaywrightExceptionHandler extends StrictLogging {
 
   */
 
+  // See the comment on parseErrorMessage: wrapped in Try for the same reason. On any parse failure,
+  // fall back to a short generic message (the caller already logs the raw message at DEBUG) rather
+  // than surfacing the full, potentially multi-line raw message as the KO reason.
   private def parseAssertionErrorMessage(assertionFailedError: AssertionFailedError): Option[String] = {
 
     val rawErrorMessage = assertionFailedError.getMessage
-    val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
+    val errorType = assertionFailedError.getClass.getSimpleName
 
-    if (checkIsStandardFormat) {
-      val messagePart = rawErrorMessage.split(SPLITTER_STRING)
+    Try {
+      val checkIsStandardFormat = rawErrorMessage.contains(SPLITTER_STRING)
 
-      val headPart = messagePart.apply(0).split("\n").mkString(";")
-
-      Option.apply(s"$headPart")
-    }
-    else {
-      Option.apply(rawErrorMessage)
-    }
+      if (checkIsStandardFormat) {
+        val messagePart = rawErrorMessage.split(SPLITTER_STRING)
+        messagePart.apply(0).split("\n").mkString(";")
+      }
+      else {
+        rawErrorMessage
+      }
+    }.recover {
+      case exception: Throwable =>
+        logger.debug(s"Failed to parse $errorType message, raw message was:\n$rawErrorMessage", exception)
+        s"Action: throw $errorType"
+    }.toOption
   }
 
 
