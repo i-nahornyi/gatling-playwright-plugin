@@ -12,7 +12,6 @@ import io.gatling.custom.browser.utils.{PerformanceUIHelper, PlaywrightException
 
 import java.util.function.BiFunction
 import scala.concurrent.Promise
-import scala.util.Try
 
 object BrowserWorkerActor {
 
@@ -23,13 +22,7 @@ object BrowserWorkerActor {
 
   protected[browser] case class StopBrowserWorker(reason: String, promise: Promise[Unit]) extends BrowserWorkerCommand
 
-  protected[browser] case class CreateNewPage(promise: Promise[Page]) extends BrowserWorkerCommand
-
   protected[browser] case class ClosePage(promise: Promise[Unit]) extends BrowserWorkerCommand
-
-  protected[browser] case class GetBrowserContext(promise: Promise[BrowserContext]) extends BrowserWorkerCommand
-
-  protected[browser] case class RecreateBrowser(promise: Promise[Browser]) extends BrowserWorkerCommand
 
   protected[browser] case class Navigate(session: Session, resolvedRequestName: String, resolvedUrl: String, navigateOptions: Page.NavigateOptions, pageLoadValidator: PageLoadValidator, enableUIMetrics: Boolean, clock: Clock, promise: Promise[BrowserCommandResponse]) extends BrowserWorkerCommand
 
@@ -55,32 +48,29 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
     }
   }
 
+  private def newContextAndPage(): Unit = {
+    browserContext = browser.newContext(contextOptions)
+    applyDefaultTimeout(browserContext)
+    page = browserContext.newPage()
+  }
+
+  private def ensureLivePage(): Unit = {
+    if (!browser.isConnected) {
+      browser = playwright.chromium().launch(launchOptions)
+      newContextAndPage()
+    } else if (browserContext.pages().isEmpty) {
+      newContextAndPage()
+    }
+  }
+
   override def init(): Behavior[BrowserWorkerCommand] = {
 
     case commandContext: InitBrowserWorker =>
       logger.trace(s"${Thread.currentThread().getName} ===> Create BrowserWorkerActor name=$actorName")
       playwright = Playwright.create()
       browser = playwright.chromium().launch(launchOptions)
-      browserContext = browser.newContext(contextOptions)
-      applyDefaultTimeout(browserContext)
-      page = browserContext.newPage()
+      newContextAndPage()
       commandContext.promise.trySuccess(())
-      stay
-
-    case commandContext: GetBrowserContext =>
-      commandContext.promise.complete(Try(browserContext))
-      stay
-
-    case commandContext: RecreateBrowser =>
-      browser = playwright.chromium().launch(launchOptions)
-      commandContext.promise.complete(Try(browser))
-      stay
-
-    case commandContext: CreateNewPage =>
-      browserContext = browser.newContext(contextOptions)
-      applyDefaultTimeout(browserContext)
-      page = browserContext.newPage()
-      commandContext.promise.complete(Try(page))
       stay
 
     case commandContext: ClosePage =>
@@ -99,9 +89,11 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
 
       var actionStatus: ActionStatus = ActionStatus()
       val currentSession = commandContext.session
-      val startTime = commandContext.clock.nowMillis
+      var startTime = commandContext.clock.nowMillis
 
       try {
+        ensureLivePage()
+        startTime = commandContext.clock.nowMillis
         page.navigate(commandContext.resolvedUrl, commandContext.navigateOptions)
         if (commandContext.pageLoadValidator != null) {
           logger.trace(s"userID-${currentSession.userId} start executing pageLoadValidator script")
@@ -135,6 +127,8 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
 
       var startTime = commandContext.clock.nowMillis
       try {
+        ensureLivePage()
+        startTime = commandContext.clock.nowMillis
         browserSession = postProcessorFunc.apply(page, browserSession)
         currentSession = browserSession.getGatlingSession
       }

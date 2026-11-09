@@ -1,6 +1,6 @@
 package io.gatling.custom.browser.actor
 
-import com.microsoft.playwright.{Browser, BrowserContext, BrowserType, Page}
+import com.microsoft.playwright.{Browser, BrowserType}
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.core.actor.{ActorRef, ActorSystem}
 import io.gatling.core.session.Session
@@ -49,57 +49,13 @@ class BrowserActorPool(system: ActorSystem, baseName: String, launchOptions: Bro
     })
   }
 
+
   def loadPageInstance(session: Session) : Unit = {
-
     val userID = session.userId
-
-    if (existActor(userID)) {
-
-      val browserContext = getBrowserContext(userID)
-
-      /// Check is browser open
-      if (!browserContext.browser().isConnected) {
-        logger.trace(s"browserActorPool contains BrowserContext for userID-$userID, but browser was closed, create new instance")
-        recreateBrowser(userID)
-      }
-      /// Check is context have active page
-      if (!(browserContext.pages().size() > 0)) {
-        logger.trace(s"browserActorPool contains BrowserContext for userID-$userID, but page was closed, create new instance")
-        createNewPage(userID)
-        return
-      }
-
-      logger.trace(s"browserActorPool contains BrowserContext for userID-$userID")
-    }
-    else {
+    if (!existActor(userID)) {
       logger.trace(s"browserActorPool doesn't contains BrowserContext for userID-$userID, create new")
       createActor(userID)
-      createNewPage(userID)
     }
-
-
-
-  }
-
-  private def getBrowserContext(actorId: Long): BrowserContext = {
-    val actor = getActorById(actorId)
-    val promise = actor.replyPromise[BrowserContext](timeout)
-    actor ! BrowserWorkerActor.GetBrowserContext(promise)
-    Await.result(promise.future, timeout)
-  }
-
-  private def recreateBrowser(actorId: Long): Unit = {
-    val actor = getActorById(actorId)
-    val promise = actor.replyPromise[Browser](timeout)
-    actor ! BrowserWorkerActor.RecreateBrowser(promise)
-    Await.result(promise.future, timeout)
-  }
-
-  private def createNewPage(actorId: Long): Page = {
-    val actor = getActorById(actorId)
-    val promise = actor.replyPromise[Page](timeout)
-    actor ! BrowserWorkerActor.CreateNewPage(promise)
-    Await.result(promise.future, timeout)
   }
 
 
