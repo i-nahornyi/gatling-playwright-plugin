@@ -1,8 +1,11 @@
 # Flow Action Example
 
 Sometimes, you need to verify that a page has loaded programmatically. In such cases, you can use a script.
+This page assumes you're already familiar with the basics in [Flow Action](./FlowAction.md).
 
 You can use `BrowserSession`, which acts as a wrapper for the default Gatling session and provides methods for storing and retrieving values.
+
+## Reading and Updating Session Values
 
 ```scala
 def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {
@@ -16,13 +19,13 @@ def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {
     // Another example of resolving a session expression
     val modifiedValueFromSession = browserSession.resolveSessionValue(session => s"${session("url").as[String]}updated")
 
-    page.navigate("https://playwright.dev/java/docs/debug")
-    
     // Updating the session
-    val session: Session = browserSession.getScalaSession().set("your_args", page.title())
+    val session: Session = browserSession.getGatlingSession.set("your_args", page.title())
     browserSession.updateBrowserSession(session)
 }
 ```
+
+## Measuring Action Timing
 
 You can manually measure action time using built-in functions.
 
@@ -50,7 +53,7 @@ def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {
     try {
       page.navigate("https://docs.gatling.io/", new NavigateOptions().setWaitUntil(NETWORKIDLE))
       page.locator("//*[@id=\"ai-initial-message\"]").isVisible()
-      
+
       PlaywrightAssertions.assertThat(page).hasTitle("FailedAssertionText")
     }
     catch {
@@ -59,3 +62,6 @@ def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {
     browserSession
 }
 ```
+
+---
+[← Flow Action](./FlowAction.md) · [BrowserSession](./BrowserSession.md) · [API overview](./Api.md)

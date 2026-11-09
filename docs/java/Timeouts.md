@@ -47,3 +47,6 @@ BrowserDsl.browserAction("test").executeFlow((page, browserSession) -> {
 **Practical takeaways:** avoid `setTimeout(0)` in load tests (it disables the safety net Playwright already
 gives you for free), and don't block inside an `executeFlow` callback with anything that isn't a
 timeout-aware Playwright call.
+
+---
+[← API overview](./Api.md) · [Open Action](./OpenAction.md) · [Flow Action](./FlowAction.md)

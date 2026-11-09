@@ -1,8 +1,11 @@
 # Flow Action Example
 
 Sometimes, you need to verify that a page has loaded programmatically. In such cases, you can use a script.
+This page assumes you're already familiar with the basics in [Flow Action](./FlowAction.md).
 
 You can use `BrowserSession`, which acts as a wrapper for the default Gatling session and provides methods for storing and retrieving values.
+
+## Reading and Updating Session Values
 
 ```java
 BiFunction<Page, BrowserSession, BrowserSession> exampleFlow = (page, browserSession) -> {
@@ -14,13 +17,15 @@ BiFunction<Page, BrowserSession, BrowserSession> exampleFlow = (page, browserSes
     Boolean valueFromSession = (Boolean) browserSession.resolveSessionValue("#{url.exists()}");
 
     // Another example of resolving a session expression
-    String anotherValueFromSession = browserSession.resolveSessionExpression(s -> s.getString("url") + "updated").toString();
+    String anotherValueFromSession = browserSession.resolveSessionValue(s -> s.getString("url") + "updated").toString();
 
     // Updating the session
-    Session session = browserSession.getJavaSession().set("your_args", page.title());
+    Session session = browserSession.getGatlingSession().set("your_args", page.title());
     return browserSession.updateBrowserSession(session);
 };
 ```
+
+## Measuring Action Timing
 
 You can manually measure action time using built-in functions.
 
@@ -58,3 +63,6 @@ BiFunction<Page, BrowserSession, BrowserSession> exampleFlow = (page, browserSes
     return browserSession;
 };
 ```
+
+---
+[← Flow Action](./FlowAction.md) · [BrowserSession](./BrowserSession.md) · [API overview](./Api.md)
