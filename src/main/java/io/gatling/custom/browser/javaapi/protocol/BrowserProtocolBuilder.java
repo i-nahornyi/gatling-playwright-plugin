@@ -12,6 +12,7 @@ public class BrowserProtocolBuilder implements ProtocolBuilder {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Protocol protocol() {
         return wrapped.buildProtocol();
     }
