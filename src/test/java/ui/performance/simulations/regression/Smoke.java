@@ -37,6 +37,8 @@ public class Smoke extends Simulation {
         browserSession.setActionEndTime(currentTime + 200);
 
         assertEquals(200, browserSession.getActionEndTime() - browserSession.getActionStartTime());
+        assertEquals("getActionStartTime() should return exactly what was set", currentTime, browserSession.getActionStartTime());
+        assertEquals("getActionEndTime() should return exactly what was set", currentTime + 200, browserSession.getActionEndTime());
 
         String errorMessage = "User defined error message";
         browserSession.setStatusKO(errorMessage);

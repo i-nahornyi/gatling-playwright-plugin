@@ -129,6 +129,7 @@ class BrowserWorkerActor(actorName: String, launchOptions: BrowserType.LaunchOpt
       try {
         ensureLivePage()
         startTime = commandContext.clock.nowMillis
+        browserSession.setActionStartTime(startTime)
         browserSession = postProcessorFunc.apply(page, browserSession)
         currentSession = browserSession.getGatlingSession
       }

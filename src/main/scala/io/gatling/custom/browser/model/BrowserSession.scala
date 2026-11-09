@@ -29,7 +29,7 @@ class BrowserSession(private var gatlingScalaSession: GatlingScalaSession) {
   }
 
   def setActionStartTime(actionStartTime: Long): Unit = {
-    this.actionStartTime = Option.apply(actionStartTime + 1)
+    this.actionStartTime = Option.apply(actionStartTime)
   }
 
   def getActionEndTime: Long = {
@@ -41,7 +41,7 @@ class BrowserSession(private var gatlingScalaSession: GatlingScalaSession) {
   }
 
   def setActionEndTime(actionEndTime: Long): Unit = {
-    this.actionEndTime = Option.apply(actionEndTime + 1)
+    this.actionEndTime = Option.apply(actionEndTime)
   }
 
   def updateBrowserSession(session: GatlingScalaSession): BrowserSession = {
