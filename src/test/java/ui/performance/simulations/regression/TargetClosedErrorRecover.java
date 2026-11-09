@@ -16,9 +16,8 @@ public class TargetClosedErrorRecover extends Simulation {
             .gatlingBrowser()
             //// This part of setup block is optional
             .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
-            .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080))
+            .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080));
             ////
-            .buildProtocol();
 
     ScenarioBuilder mainScenario = scenario("test")
             .exec(

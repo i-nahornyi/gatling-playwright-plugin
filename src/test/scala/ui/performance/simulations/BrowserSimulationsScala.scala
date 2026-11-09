@@ -23,7 +23,6 @@ class BrowserSimulationsScala extends Simulation {
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
     .enableUIMetrics()
     ////
-    .buildProtocol()
 
   /// [Example#1] How to get and put your variable to gatling session
   def exampleFlow(page: Page, browserSession: BrowserSession): BrowserSession = {

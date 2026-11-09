@@ -19,7 +19,6 @@ class WebVitalsScala extends Simulation {
     .withContextOptions(new NewContextOptions().setViewportSize(1920, 1080))
     .withLaunchOptions(new LaunchOptions().setHeadless(false))
     .enableUIMetrics()
-    .buildProtocol()
 
   val customValidationScript: String = loadScript("scripts/home_page_load.js")
 

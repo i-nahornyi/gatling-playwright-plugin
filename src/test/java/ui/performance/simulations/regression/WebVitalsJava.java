@@ -23,8 +23,7 @@ public class WebVitalsJava extends Simulation {
             .gatlingBrowser()
             .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
             .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080))
-            .enableUIMetrics()
-            .buildProtocol();
+            .enableUIMetrics();
 
 
     String customValidationScript = BrowserDsl.loadScript("scripts/home_page_load.js");

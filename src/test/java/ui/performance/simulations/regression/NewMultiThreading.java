@@ -18,9 +18,7 @@ public class NewMultiThreading extends Simulation {
             //// This part of setup block is optional
             .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
             .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080))
-            .enableUIMetrics()
-            ////
-            .buildProtocol();
+            .enableUIMetrics();
 
 
 

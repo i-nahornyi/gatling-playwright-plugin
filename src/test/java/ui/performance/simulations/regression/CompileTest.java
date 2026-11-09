@@ -4,8 +4,8 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import io.gatling.custom.browser.javaapi.BrowserDsl;
-import io.gatling.custom.browser.javaapi.protocol.BrowserProtocolBuilder;
 import io.gatling.custom.browser.model.PageLoadValidator;
+import io.gatling.javaapi.core.ProtocolBuilder;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Session;
 import io.gatling.javaapi.core.Simulation;
@@ -16,13 +16,12 @@ import static io.gatling.javaapi.core.CoreDsl.*;
 @SuppressWarnings("unused")
 public class CompileTest extends Simulation {
 
-    BrowserProtocolBuilder browserProtocol = BrowserDsl
+    ProtocolBuilder browserProtocol = BrowserDsl
             .gatlingBrowser()
             .withLaunchOptions(new BrowserType.LaunchOptions().setHeadless(false))
             .withContextOptions(new Browser.NewContextOptions().setViewportSize(1920, 1080).setIsMobile(false))
             .enableUIMetrics()
-            .withDefaultTimeout(300000)
-            .buildProtocol();
+            .withDefaultTimeout(300000);
 
     String customValidationScript = BrowserDsl.loadScript("scripts/home_page_load.js");
     PageLoadValidator customPageLoadValidator = new PageLoadValidator(
