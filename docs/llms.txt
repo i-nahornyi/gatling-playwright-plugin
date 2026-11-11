@@ -86,10 +86,6 @@ Builder methods (both languages, chainable, all optional):
   `BrowserContext.setDefaultTimeout`/`setDefaultNavigationTimeout` on every context the plugin creates,
   so you don't have to repeat `NavigateOptions.setTimeout(...)` on every `open()` call.
 
-`.buildProtocol()` **is deprecated and no longer necessary** — the builder itself converts/implements
-the type Gatling's `.protocols(...)`/`setUp(...)` expects directly (an implicit conversion in Scala, the
-`ProtocolBuilder` interface in Java). Only write `.buildProtocol()` if matching older example code; new
-code should omit it, as in the two snippets above.
 
 ## Action name
 

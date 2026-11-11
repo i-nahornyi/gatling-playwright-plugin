@@ -23,10 +23,6 @@ val browserProtocol: Protocol = gatlingBrowser
 `.withDefaultTimeout(millis)` sets a default action/navigation timeout for every browser action — see
 [Timeouts](./Timeouts.md) for how it interacts with `open`/`executeFlow`.
 
-> `.buildProtocol()` is **deprecated** and no longer needed — a `BrowserProtocolBuilder` implicitly
-> converts to a `Protocol` wherever one is expected (as above, via the `val`'s type annotation). It
-> still works if called explicitly, just unnecessary going forward.
-
 ## Action name
 
 ```scala
