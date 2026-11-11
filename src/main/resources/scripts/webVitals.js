@@ -1,586 +1,355 @@
-/// * This script uses the web-vitals library (https://github.com/GoogleChrome/web-vitals)
-/// * Copyright 2020 Google LLC
-
-"use strict";
+/*!
+ * This script uses the web-vitals library (https://github.com/GoogleChrome/web-vitals)
+ * Copyright 2020 Google LLC
+ */
 (() => {
-  // dist/modules/lib/bfcache.js
-  var bfcacheRestoreTime = -1;
-  var getBFCacheRestoreTime = () => bfcacheRestoreTime;
-  var onBFCacheRestore = (cb) => {
-    addEventListener("pageshow", (event) => {
-      if (event.persisted) {
-        bfcacheRestoreTime = event.timeStamp;
-        cb(event);
-      }
+  // node_modules/web-vitals/dist/web-vitals.js
+  var t = -1;
+  var n = () => t;
+  var e = (n2) => {
+    addEventListener("pageshow", (e2) => {
+      e2.persisted && (t = e2.timeStamp, n2(e2));
     }, true);
   };
-
-  // dist/modules/lib/bindReporter.js
-  var getRating = (value, thresholds) => {
-    if (value > thresholds[1]) {
-      return "poor";
-    }
-    if (value > thresholds[0]) {
-      return "needs-improvement";
-    }
-    return "good";
-  };
-  var bindReporter = (callback, metric, thresholds, reportAllChanges) => {
-    let prevValue;
-    let delta;
-    return (forceReport) => {
-      if (metric.value >= 0) {
-        if (forceReport || reportAllChanges) {
-          delta = metric.value - (prevValue ?? 0);
-          if (delta || prevValue === void 0) {
-            prevValue = metric.value;
-            metric.delta = delta;
-            metric.rating = getRating(metric.value, thresholds);
-            callback(metric);
-          }
-        }
-      }
+  var i = (t2, n2, e2, i2) => {
+    let o2, s2;
+    return (a2) => {
+      n2.value >= 0 && (a2 || i2) && (s2 = n2.value - (o2 ?? 0), (s2 || void 0 === o2) && (o2 = n2.value, n2.delta = s2, n2.rating = ((t3, n3) => t3 > n3[1] ? "poor" : t3 > n3[0] ? "needs-improvement" : "good")(n2.value, e2), t2(n2)));
     };
   };
-
-  // dist/modules/lib/doubleRAF.js
-  var doubleRAF = (cb) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => cb()));
+  var o = (t2) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => t2()));
   };
-
-  // dist/modules/lib/generateUniqueID.js
-  var generateUniqueID = () => {
-    return `v5-${Date.now()}-${Math.floor(Math.random() * (9e12 - 1)) + 1e12}`;
+  var s = () => {
+    const t2 = performance.getEntriesByType("navigation")[0];
+    if (t2 && t2.responseStart > 0 && t2.responseStart < performance.now()) return t2;
   };
-
-  // dist/modules/lib/getNavigationEntry.js
-  var getNavigationEntry = () => {
-    const navigationEntry = performance.getEntriesByType("navigation")[0];
-    if (navigationEntry && navigationEntry.responseStart > 0 && navigationEntry.responseStart < performance.now()) {
-      return navigationEntry;
+  var a = () => s()?.activationStart ?? 0;
+  var r = -1;
+  var c = /* @__PURE__ */ new Set();
+  var f = () => "hidden" !== document.visibilityState || document.prerendering ? 1 / 0 : 0;
+  var h = (t2) => {
+    if ("hidden" === document.visibilityState) {
+      if ("visibilitychange" === t2.type) for (const t3 of c) t3();
+      isFinite(r) || (r = "visibilitychange" === t2.type ? t2.timeStamp : 0, removeEventListener("prerenderingchange", h, true));
     }
   };
-
-  // dist/modules/lib/getActivationStart.js
-  var getActivationStart = () => {
-    const navEntry = getNavigationEntry();
-    return navEntry?.activationStart ?? 0;
-  };
-
-  // dist/modules/lib/initMetric.js
-  var initMetric = (name, value = -1) => {
-    const navEntry = getNavigationEntry();
-    let navigationType = "navigate";
-    if (getBFCacheRestoreTime() >= 0) {
-      navigationType = "back-forward-cache";
-    } else if (navEntry) {
-      if (document.prerendering || getActivationStart() > 0) {
-        navigationType = "prerender";
-      } else if (document.wasDiscarded) {
-        navigationType = "restore";
-      } else if (navEntry.type) {
-        navigationType = navEntry.type.replace(/_/g, "-");
-      }
+  var d = (t2 = false) => {
+    if (t2 && (r = 1 / 0), r < 0) {
+      const t3 = a(), n2 = document.prerendering ? void 0 : globalThis.performance.getEntriesByType("visibility-state").find((n3) => "hidden" === n3.name && n3.startTime >= t3)?.startTime;
+      r = n2 ?? f(), addEventListener("visibilitychange", h, true), addEventListener("prerenderingchange", h, true), e(() => {
+        setTimeout(() => {
+          r = f();
+        });
+      });
     }
-    const entries = [];
-    return {
-      name,
-      value,
-      rating: "good",
-      // If needed, will be updated when reported. `const` to keep the type from widening to `string`.
-      delta: 0,
-      entries,
-      id: generateUniqueID(),
-      navigationType
-    };
+    return { get firstHiddenTime() {
+      return r;
+    }, onHidden(t3) {
+      c.add(t3);
+    } };
   };
-
-  // dist/modules/lib/initUnique.js
-  var instanceMap = /* @__PURE__ */ new WeakMap();
-  function initUnique(identityObj, ClassObj) {
-    if (!instanceMap.get(identityObj)) {
-      instanceMap.set(identityObj, new ClassObj());
-    }
-    return instanceMap.get(identityObj);
+  var l = (t2, e2 = -1, i2, o2 = 0, r2, c2, f2) => {
+    const h2 = s(), d2 = h2?.navigationId || 0;
+    let l2 = "navigate";
+    i2 ? l2 = i2 : n() >= 0 ? l2 = "back-forward-cache" : h2 && (document.prerendering || a() > 0 ? l2 = "prerender" : document.wasDiscarded ? l2 = "restore" : h2.type && (l2 = h2.type.replace(/_/g, "-")));
+    return { name: t2, value: e2, rating: "good", delta: 0, entries: [], id: `v6-${Date.now()}-${Math.floor(8999999999999 * Math.random()) + 1e12}`, navigationType: l2, navigationId: o2 || d2, navigationInteractionId: r2, navigationURL: c2 || h2?.name, navigationStartTime: f2 || 0 };
+  };
+  var g = /* @__PURE__ */ new WeakMap();
+  function u(t2, n2) {
+    let e2 = g.get(n2);
+    return e2 || (e2 = /* @__PURE__ */ new WeakMap(), g.set(n2, e2)), e2.get(t2) || e2.set(t2, new n2()), e2.get(t2);
   }
-
-  // dist/modules/lib/LayoutShiftManager.js
-  var LayoutShiftManager = class {
-    _onAfterProcessingUnexpectedShift;
-    _sessionValue = 0;
-    _sessionEntries = [];
-    _processEntry(entry) {
-      if (entry.hadRecentInput)
-        return;
-      const firstSessionEntry = this._sessionEntries[0];
-      const lastSessionEntry = this._sessionEntries.at(-1);
-      if (this._sessionValue && firstSessionEntry && lastSessionEntry && entry.startTime - lastSessionEntry.startTime < 1e3 && entry.startTime - firstSessionEntry.startTime < 5e3) {
-        this._sessionValue += entry.value;
-        this._sessionEntries.push(entry);
-      } else {
-        this._sessionValue = entry.value;
-        this._sessionEntries = [entry];
-      }
-      this._onAfterProcessingUnexpectedShift?.(entry);
+  var v = class {
+    t;
+    i = 0;
+    o = [];
+    h(t2) {
+      if (t2.hadRecentInput) return;
+      const n2 = this.o[0], e2 = this.o.at(-1);
+      this.i && n2 && e2 && t2.startTime - e2.startTime < 1e3 && t2.startTime - n2.startTime < 5e3 ? (this.i += t2.value, this.o.push(t2)) : (this.i = t2.value, this.o = [t2]), this.t?.(t2);
     }
   };
-
-  // dist/modules/lib/observe.js
-  var observe = (type, callback, opts = {}) => {
+  var m = (t2, n2, e2 = {}) => {
     try {
-      if (PerformanceObserver.supportedEntryTypes.includes(type)) {
-        const po2 = new PerformanceObserver((list) => {
-          Promise.resolve().then(() => {
-            callback(list.getEntries());
+      const i2 = t2.filter((t3) => PerformanceObserver.supportedEntryTypes.includes(t3));
+      if (i2.length > 0) {
+        const t3 = new PerformanceObserver((t4) => {
+          queueMicrotask(() => {
+            const e3 = t4.getEntries();
+            i2.length > 1 && e3.sort((t5, n3) => t5.startTime + t5.duration - (n3.startTime + n3.duration)), n2(e3);
           });
         });
-        po2.observe({ type, buffered: true, ...opts });
-        return po2;
+        for (const n3 of i2) t3.observe({ type: n3, buffered: true, ...e2 });
+        return t3;
       }
     } catch {
     }
-    return;
   };
-
-  // dist/modules/lib/runOnce.js
-  var runOnce = (cb) => {
-    let called = false;
+  var p = (t2) => globalThis.PerformanceObserver?.supportedEntryTypes?.includes("soft-navigation") && "function" == typeof globalThis.PerformanceSoftNavigation?.prototype?.getLargestInteractionContentfulPaint && t2 && t2.reportSoftNavs;
+  var b = (t2, n2) => {
+    if (t2.set(n2.navigationId, n2), t2.size > 2) {
+      const n3 = t2.keys().next().value;
+      void 0 !== n3 && t2.delete(n3);
+    }
+  };
+  var T = (t2) => {
+    let n2 = false;
     return () => {
-      if (!called) {
-        cb();
-        called = true;
-      }
+      n2 || (t2(), n2 = true);
     };
   };
-
-  // dist/modules/lib/getVisibilityWatcher.js
-  var firstHiddenTime = -1;
-  var onHiddenFunctions = /* @__PURE__ */ new Set();
-  var initHiddenTime = () => {
-    return document.visibilityState === "hidden" && !document.prerendering ? 0 : Infinity;
+  var y = class {
+    l;
   };
-  var onVisibilityUpdate = (event) => {
-    if (document.visibilityState === "hidden") {
-      if (event.type === "visibilitychange") {
-        for (const onHiddenFunction of onHiddenFunctions) {
-          onHiddenFunction();
-        }
-      }
-      if (!isFinite(firstHiddenTime)) {
-        firstHiddenTime = event.type === "visibilitychange" ? event.timeStamp : 0;
-        removeEventListener("prerenderingchange", onVisibilityUpdate, true);
-      }
-    }
+  var _ = (t2) => {
+    document.prerendering ? addEventListener("prerenderingchange", t2, true) : t2();
   };
-  var getVisibilityWatcher = () => {
-    if (firstHiddenTime < 0) {
-      const activationStart = getActivationStart();
-      const firstVisibilityStateHiddenTime = !document.prerendering ? globalThis.performance.getEntriesByType("visibility-state").filter((e) => e.name === "hidden" && e.startTime > activationStart)[0]?.startTime : void 0;
-      firstHiddenTime = firstVisibilityStateHiddenTime ?? initHiddenTime();
-      addEventListener("visibilitychange", onVisibilityUpdate, true);
-      addEventListener("prerenderingchange", onVisibilityUpdate, true);
-      onBFCacheRestore(() => {
-        setTimeout(() => {
-          firstHiddenTime = initHiddenTime();
-        });
+  var E = [1800, 3e3];
+  var M = (t2, s2 = {}) => {
+    const r2 = p(s2);
+    _(() => {
+      const c2 = u(s2, y), f2 = d();
+      let h2, g2 = l("FCP");
+      const v2 = m(["paint"], (t3) => {
+        for (const n2 of t3) "first-contentful-paint" === n2.name && (v2.disconnect(), n2.startTime < f2.firstHiddenTime && (g2.value = Math.max(n2.startTime - a(), 0), g2.entries.push(n2), g2.navigationId = n2.navigationId || g2.navigationId, h2(true)));
       });
-    }
-    return {
-      get firstHiddenTime() {
-        return firstHiddenTime;
-      },
-      onHidden(cb) {
-        onHiddenFunctions.add(cb);
-      }
-    };
-  };
-
-  // dist/modules/lib/whenActivated.js
-  var whenActivated = (callback) => {
-    if (document.prerendering) {
-      addEventListener("prerenderingchange", () => callback(), true);
-    } else {
-      callback();
-    }
-  };
-
-  // dist/modules/onFCP.js
-  var FCPThresholds = [1800, 3e3];
-  var onFCP = (onReport, opts = {}) => {
-    whenActivated(() => {
-      const visibilityWatcher = getVisibilityWatcher();
-      let metric = initMetric("FCP");
-      let report;
-      const handleEntries = (entries) => {
-        for (const entry of entries) {
-          if (entry.name === "first-contentful-paint") {
-            po2.disconnect();
-            if (entry.startTime < visibilityWatcher.firstHiddenTime) {
-              metric.value = Math.max(entry.startTime - getActivationStart(), 0);
-              metric.entries.push(entry);
-              report(true);
-            }
-          }
-        }
-      };
-      const po2 = observe("paint", handleEntries);
-      if (po2) {
-        report = bindReporter(onReport, metric, FCPThresholds, opts.reportAllChanges);
-        onBFCacheRestore((event) => {
-          metric = initMetric("FCP");
-          report = bindReporter(onReport, metric, FCPThresholds, opts.reportAllChanges);
-          doubleRAF(() => {
-            metric.value = performance.now() - event.timeStamp;
-            report(true);
-          });
+      if (v2 && (h2 = i(t2, g2, E, s2.reportAllChanges), e((e2) => {
+        g2 = l("FCP", -1, "back-forward-cache", g2.navigationId, g2.navigationInteractionId, g2.navigationURL, n()), h2 = i(t2, g2, E, s2.reportAllChanges), o(() => {
+          g2.value = performance.now() - e2.timeStamp, h2(true);
         });
+      })), r2) {
+        m(["soft-navigation"], (n2) => {
+          n2.forEach((n3) => {
+            c2.l && n3.navigationId && b(c2.l, n3);
+            const e2 = Math.max((n3.presentationTime || n3.paintTime || 0) - n3.startTime, 0);
+            g2 = l("FCP", e2, "soft-navigation", n3.navigationId, n3.interactionId, n3.name, n3.startTime), h2 = i(t2, g2, E, s2.reportAllChanges), h2(true);
+          });
+        }, s2);
       }
     });
   };
-
-  // dist/modules/onCLS.js
-  var CLSThresholds = [0.1, 0.25];
-  var onCLS = (onReport, opts = {}) => {
-    const visibilityWatcher = getVisibilityWatcher();
-    onFCP(runOnce(() => {
-      let metric = initMetric("CLS", 0);
-      let report;
-      const layoutShiftManager = initUnique(opts, LayoutShiftManager);
-      const handleEntries = (entries) => {
-        for (const entry of entries) {
-          layoutShiftManager._processEntry(entry);
-        }
-        if (layoutShiftManager._sessionValue > metric.value) {
-          metric.value = layoutShiftManager._sessionValue;
-          metric.entries = layoutShiftManager._sessionEntries;
-          report();
-        }
-      };
-      const po2 = observe("layout-shift", handleEntries);
-      if (po2) {
-        report = bindReporter(onReport, metric, CLSThresholds, opts.reportAllChanges);
-        visibilityWatcher.onHidden(() => {
-          handleEntries(po2.takeRecords());
-          report(true);
-        });
-        onBFCacheRestore(() => {
-          layoutShiftManager._sessionValue = 0;
-          metric = initMetric("CLS", 0);
-          report = bindReporter(onReport, metric, CLSThresholds, opts.reportAllChanges);
-          doubleRAF(() => report());
-        });
-        setTimeout(report);
-      }
+  var L = [0.1, 0.25];
+  var P = (t2, s2 = {}) => {
+    const a2 = d();
+    M(T(() => {
+      let r2, c2 = l("CLS", 0);
+      const f2 = u(s2, v), h2 = (n2, e2, o2, a3, h3) => {
+        c2 = l("CLS", 0, n2, e2, o2, a3, h3), f2.i = 0, r2 = i(t2, c2, L, s2.reportAllChanges);
+      }, d2 = (t3 = false) => {
+        f2.i > c2.value && (c2.value = f2.i, c2.entries = f2.o), r2(t3);
+      }, g2 = (t3) => {
+        d2(true), h2("soft-navigation", t3.navigationId, t3.interactionId, t3.name, t3.startTime);
+      }, b2 = (t3) => {
+        for (const n2 of t3) "soft-navigation" !== n2.entryType ? f2.h(n2) : g2(n2);
+        d2();
+      }, T2 = ["layout-shift"];
+      p(s2) && T2.push("soft-navigation");
+      const y2 = m(T2, b2);
+      y2 && (r2 = i(t2, c2, L, s2.reportAllChanges), a2.onHidden(() => {
+        b2(y2.takeRecords()), r2(true);
+      }), e(() => {
+        h2("back-forward-cache", c2.navigationId, c2.navigationInteractionId, c2.navigationURL, n()), o(r2);
+      }), setTimeout(r2));
     }));
   };
-
-  // dist/modules/lib/polyfills/interactionCountPolyfill.js
-  var interactionCountEstimate = 0;
-  var minKnownInteractionId = Infinity;
-  var maxKnownInteractionId = 0;
-  var updateEstimate = (entries) => {
-    for (const entry of entries) {
-      if (entry.interactionId) {
-        minKnownInteractionId = Math.min(minKnownInteractionId, entry.interactionId);
-        maxKnownInteractionId = Math.max(maxKnownInteractionId, entry.interactionId);
-        interactionCountEstimate = maxKnownInteractionId ? (maxKnownInteractionId - minKnownInteractionId) / 7 + 1 : 0;
+  var w = 0;
+  var I = 1 / 0;
+  var k = 0;
+  var C = (t2) => {
+    for (const n2 of t2) n2.interactionId && (I = Math.min(I, n2.interactionId), k = Math.max(k, n2.interactionId), w = k ? (k - I) / 7 + 1 : 0);
+  };
+  var F;
+  var N = () => F ? w : performance.interactionCount ?? 0;
+  var B = () => {
+    "interactionCount" in performance || F || (F = m(["event"], C, { durationThreshold: 0 }));
+  };
+  var S = class {
+    u = 0;
+    v = [];
+    m = /* @__PURE__ */ new Map();
+    p;
+    T;
+    _() {
+      return N() - this.u;
+    }
+    M() {
+      this.u = N(), this.v.length = 0, this.m.clear();
+    }
+    L(t2) {
+      const n2 = this._(), e2 = Math.min(this.v.length - 1, Math.floor(n2 / 50));
+      return !n2 || -1 !== e2 || "soft-navigation" !== t2 && "back-forward-cache" !== t2 ? this.v[e2] : { P: 8, id: -1, entries: [] };
+    }
+    h(t2) {
+      if (this.p?.(t2), !t2.interactionId) return;
+      const n2 = this.v.at(-1);
+      let e2 = this.m.get(t2.interactionId);
+      if (e2 || this.v.length < 10 || t2.duration > n2.P) {
+        if (e2 ? t2.duration > e2.P ? (e2.entries = [t2], e2.P = t2.duration) : t2.duration === e2.P && t2.startTime === e2.entries[0].startTime && e2.entries.push(t2) : (e2 = { id: t2.interactionId, entries: [t2], P: t2.duration }, this.m.set(e2.id, e2), this.v.push(e2)), this.v.sort((t3, n3) => n3.P - t3.P), this.v.length > 10) {
+          const t3 = this.v.splice(10);
+          for (const n3 of t3) this.m.delete(n3.id);
+        }
+        this.T?.(e2);
       }
     }
   };
-  var po;
-  var getInteractionCount = () => {
-    return po ? interactionCountEstimate : performance.interactionCount ?? 0;
+  var q = (t2) => {
+    const n2 = "requestIdleCallback" in globalThis ? 1e3 : 0, e2 = globalThis.requestIdleCallback || setTimeout, i2 = globalThis.cancelIdleCallback || clearTimeout;
+    if ("hidden" === document.visibilityState) t2();
+    else {
+      const o2 = T(t2);
+      let s2 = -1;
+      const a2 = () => {
+        i2(s2), o2();
+      };
+      addEventListener("visibilitychange", a2, { once: true, capture: true }), s2 = e2(() => {
+        removeEventListener("visibilitychange", a2, { capture: true }), o2();
+      }, { timeout: n2 });
+    }
   };
-  var initInteractionCountPolyfill = () => {
-    if ("interactionCount" in performance || po)
-      return;
-    po = observe("event", updateEstimate, {
-      type: "event",
-      buffered: true,
-      durationThreshold: 0
+  var A = [200, 500];
+  var x = (t2, o2 = {}) => {
+    if (!globalThis.PerformanceEventTiming || !("interactionId" in PerformanceEventTiming.prototype)) return;
+    const s2 = d();
+    _(() => {
+      B();
+      let a2, r2 = l("INP");
+      const c2 = u(o2, S), f2 = (n2, e2, s3, f3, h3) => {
+        c2.M(), r2 = l("INP", -1, n2, e2, s3, f3, h3), a2 = i(t2, r2, A, o2.reportAllChanges);
+      }, h2 = () => {
+        const t3 = c2.L(r2.navigationType);
+        t3 && t3.P !== r2.value && (r2.value = t3.P, r2.entries = t3.entries, a2());
+      }, d2 = (t3) => {
+        h2(), a2(true), f2("soft-navigation", t3.navigationId, t3.interactionId, t3.name, t3.startTime);
+      }, g2 = (t3, n2 = false) => {
+        q(() => {
+          for (const n3 of t3) "soft-navigation" !== n3.entryType ? c2.h(n3) : d2(n3);
+          h2(), n2 && a2(true);
+        });
+      }, v2 = ["event", "first-input"];
+      p(o2) && v2.push("soft-navigation");
+      const b2 = m(v2, g2, { ...o2, durationThreshold: o2.durationThreshold ?? 40 });
+      a2 = i(t2, r2, A, o2.reportAllChanges), b2 && (s2.onHidden(() => {
+        g2(b2.takeRecords(), true);
+      }), e(() => {
+        f2("back-forward-cache", r2.navigationId, r2.navigationInteractionId, r2.navigationURL, n());
+      }));
     });
   };
-
-  // dist/modules/lib/InteractionManager.js
-  var MAX_INTERACTIONS_TO_CONSIDER = 10;
-  var prevInteractionCount = 0;
-  var getInteractionCountForNavigation = () => {
-    return getInteractionCount() - prevInteractionCount;
+  var H = class {
+    p;
+    l;
+    h(t2) {
+      this.p?.(t2);
+    }
   };
-  var InteractionManager = class {
-    /**
-     * A list of longest interactions on the page (by latency) sorted so the
-     * longest one is first. The list is at most MAX_INTERACTIONS_TO_CONSIDER
-     * long.
-     */
-    _longestInteractionList = [];
-    /**
-     * A mapping of longest interactions by their interaction ID.
-     * This is used for faster lookup.
-     */
-    _longestInteractionMap = /* @__PURE__ */ new Map();
-    _onBeforeProcessingEntry;
-    _onAfterProcessingINPCandidate;
-    _resetInteractions() {
-      prevInteractionCount = getInteractionCount();
-      this._longestInteractionList.length = 0;
-      this._longestInteractionMap.clear();
-    }
-    /**
-     * Returns the estimated p98 longest interaction based on the stored
-     * interaction candidates and the interaction count for the current page.
-     */
-    _estimateP98LongestInteraction() {
-      const candidateInteractionIndex = Math.min(this._longestInteractionList.length - 1, Math.floor(getInteractionCountForNavigation() / 50));
-      return this._longestInteractionList[candidateInteractionIndex];
-    }
-    /**
-     * Takes a performance entry and adds it to the list of worst interactions
-     * if its duration is long enough to make it among the worst. If the
-     * entry is part of an existing interaction, it is merged and the latency
-     * and entries list is updated as needed.
-     */
-    _processEntry(entry) {
-      this._onBeforeProcessingEntry?.(entry);
-      if (!(entry.interactionId || entry.entryType === "first-input"))
-        return;
-      const minLongestInteraction = this._longestInteractionList.at(-1);
-      let interaction = this._longestInteractionMap.get(entry.interactionId);
-      if (interaction || this._longestInteractionList.length < MAX_INTERACTIONS_TO_CONSIDER || // If the above conditions are false, `minLongestInteraction` will be set.
-      entry.duration > minLongestInteraction._latency) {
-        if (interaction) {
-          if (entry.duration > interaction._latency) {
-            interaction.entries = [entry];
-            interaction._latency = entry.duration;
-          } else if (entry.duration === interaction._latency && entry.startTime === interaction.entries[0].startTime) {
-            interaction.entries.push(entry);
+  var O = [2500, 4e3];
+  var U = (t2, s2 = {}) => {
+    let r2 = false;
+    const c2 = p(s2);
+    _(() => {
+      let f2, h2 = d(), g2 = l("LCP");
+      const v2 = u(s2, H), p2 = (n2, e2, o2, a2, c3) => {
+        g2 = l("LCP", -1, n2, e2, o2, a2, c3), f2 = i(t2, g2, O, s2.reportAllChanges), r2 = false, "soft-navigation" === n2 && (h2 = d(true));
+      }, T2 = (t3) => {
+        v2.l && t3.navigationId && b(v2.l, t3), r2 || f2(true), p2("soft-navigation", t3.navigationId, t3.interactionId, t3.name, t3.startTime);
+        const n2 = t3.getLargestInteractionContentfulPaint?.();
+        n2 && y2([n2]);
+      }, y2 = (t3) => {
+        s2.reportAllChanges || c2 || (t3 = t3.slice(-1));
+        for (const n2 of t3) {
+          if (!n2) continue;
+          if ("soft-navigation" === n2.entryType) {
+            T2(n2);
+            continue;
           }
-        } else {
-          interaction = {
-            id: entry.interactionId,
-            entries: [entry],
-            _latency: entry.duration
-          };
-          this._longestInteractionMap.set(interaction.id, interaction);
-          this._longestInteractionList.push(interaction);
+          let t4 = 0, e2 = [], i2 = n2.startTime;
+          if ("largest-contentful-paint" === n2.entryType) t4 = Math.max(n2.startTime - a(), 0), v2.h(n2), e2 = [n2];
+          else if ("interaction-contentful-paint" === n2.entryType) {
+            const o2 = n2;
+            if (!g2.navigationId) continue;
+            if ("interactionId" in o2 && o2.interactionId != g2.navigationInteractionId) continue;
+            i2 = o2.largestContentfulPaint?.renderTime || 0, t4 = Math.max(i2 - n2.startTime, 0), o2.largestContentfulPaint && (v2.h(o2.largestContentfulPaint), e2 = [o2.largestContentfulPaint]);
+          }
+          i2 < h2.firstHiddenTime && (g2.value = t4, g2.entries = e2, f2());
         }
-        this._longestInteractionList.sort((a, b) => b._latency - a._latency);
-        if (this._longestInteractionList.length > MAX_INTERACTIONS_TO_CONSIDER) {
-          const removedInteractions = this._longestInteractionList.splice(MAX_INTERACTIONS_TO_CONSIDER);
-          for (const interaction2 of removedInteractions) {
-            this._longestInteractionMap.delete(interaction2.id);
-          }
-        }
-        this._onAfterProcessingINPCandidate?.(interaction);
-      }
-    }
-  };
-
-  // dist/modules/lib/whenIdleOrHidden.js
-  var whenIdleOrHidden = (cb) => {
-    const rIC = globalThis.requestIdleCallback || setTimeout;
-    if (document.visibilityState === "hidden") {
-      cb();
-    } else {
-      cb = runOnce(cb);
-      addEventListener("visibilitychange", cb, { once: true, capture: true });
-      rIC(() => {
-        cb();
-        removeEventListener("visibilitychange", cb, { capture: true });
-      });
-    }
-  };
-
-  // dist/modules/onINP.js
-  var INPThresholds = [200, 500];
-  var DEFAULT_DURATION_THRESHOLD = 40;
-  var onINP = (onReport, opts = {}) => {
-    if (!(globalThis.PerformanceEventTiming && "interactionId" in PerformanceEventTiming.prototype)) {
-      return;
-    }
-    const visibilityWatcher = getVisibilityWatcher();
-    whenActivated(() => {
-      initInteractionCountPolyfill();
-      let metric = initMetric("INP");
-      let report;
-      const interactionManager = initUnique(opts, InteractionManager);
-      const handleEntries = (entries) => {
-        whenIdleOrHidden(() => {
-          for (const entry of entries) {
-            interactionManager._processEntry(entry);
-          }
-          const inp = interactionManager._estimateP98LongestInteraction();
-          if (inp && inp._latency !== metric.value) {
-            metric.value = inp._latency;
-            metric.entries = inp.entries;
-            report();
-          }
-        });
-      };
-      const po2 = observe("event", handleEntries, {
-        // Event Timing entries have their durations rounded to the nearest 8ms,
-        // so a duration of 40ms would be any event that spans 2.5 or more frames
-        // at 60Hz. This threshold is chosen to strike a balance between usefulness
-        // and performance. Running this callback for any interaction that spans
-        // just one or two frames is likely not worth the insight that could be
-        // gained.
-        durationThreshold: opts.durationThreshold ?? DEFAULT_DURATION_THRESHOLD
-      });
-      report = bindReporter(onReport, metric, INPThresholds, opts.reportAllChanges);
-      if (po2) {
-        po2.observe({ type: "first-input", buffered: true });
-        visibilityWatcher.onHidden(() => {
-          handleEntries(po2.takeRecords());
-          report(true);
-        });
-        onBFCacheRestore(() => {
-          interactionManager._resetInteractions();
-          metric = initMetric("INP");
-          report = bindReporter(onReport, metric, INPThresholds, opts.reportAllChanges);
-        });
-      }
-    });
-  };
-
-  // dist/modules/lib/LCPEntryManager.js
-  var LCPEntryManager = class {
-    _onBeforeProcessingEntry;
-    _processEntry(entry) {
-      this._onBeforeProcessingEntry?.(entry);
-    }
-  };
-
-  // dist/modules/onLCP.js
-  var LCPThresholds = [2500, 4e3];
-  var onLCP = (onReport, opts = {}) => {
-    whenActivated(() => {
-      const visibilityWatcher = getVisibilityWatcher();
-      let metric = initMetric("LCP");
-      let report;
-      const lcpEntryManager = initUnique(opts, LCPEntryManager);
-      const handleEntries = (entries) => {
-        if (!opts.reportAllChanges) {
-          entries = entries.slice(-1);
-        }
-        for (const entry of entries) {
-          lcpEntryManager._processEntry(entry);
-          if (entry.startTime < visibilityWatcher.firstHiddenTime) {
-            metric.value = Math.max(entry.startTime - getActivationStart(), 0);
-            metric.entries = [entry];
-            report();
-          }
-        }
-      };
-      const po2 = observe("largest-contentful-paint", handleEntries);
-      if (po2) {
-        report = bindReporter(onReport, metric, LCPThresholds, opts.reportAllChanges);
-        const stopListening = runOnce(() => {
-          handleEntries(po2.takeRecords());
-          po2.disconnect();
-          report(true);
-        });
-        const stopListeningWrapper = (event) => {
-          if (event.isTrusted) {
-            whenIdleOrHidden(stopListening);
-            removeEventListener(event.type, stopListeningWrapper, {
-              capture: true
+      }, _2 = ["largest-contentful-paint"];
+      c2 && _2.push("interaction-contentful-paint", "soft-navigation");
+      const E2 = m(_2, y2);
+      if (E2) {
+        f2 = i(t2, g2, O, s2.reportAllChanges);
+        const a2 = ["keydown", "click", "visibilitychange"], h3 = (t3) => {
+          if (t3.isTrusted && !r2) {
+            const t4 = g2.id;
+            q(() => {
+              if (!r2) {
+                if (!c2) {
+                  E2.disconnect();
+                  for (const t5 of a2) removeEventListener(t5, h3, { capture: true });
+                }
+                t4 === g2.id && (r2 = true, f2(true));
+              }
             });
           }
         };
-        for (const type of ["keydown", "click", "visibilitychange"]) {
-          addEventListener(type, stopListeningWrapper, {
-            capture: true
+        for (const t3 of a2) addEventListener(t3, h3, { capture: true });
+        e((e2) => {
+          p2("back-forward-cache", g2.navigationId, g2.navigationInteractionId, g2.navigationURL, n()), f2 = i(t2, g2, O, s2.reportAllChanges), o(() => {
+            g2.value = performance.now() - e2.timeStamp, r2 = true, f2(true);
           });
+        });
+      }
+    });
+  };
+  var W = [800, 1800];
+  var $ = (t2) => {
+    document.prerendering ? _(() => $(t2)) : "complete" !== document.readyState ? addEventListener("load", () => $(t2), true) : setTimeout(t2);
+  };
+  var D = (t2, o2 = {}) => {
+    const r2 = p(o2);
+    let c2 = l("TTFB"), f2 = i(t2, c2, W, o2.reportAllChanges);
+    $(() => {
+      const h2 = s();
+      if (h2) {
+        const s2 = h2.responseStart;
+        if (c2.value = Math.max(s2 - a(), 0), c2.entries = [h2], f2(true), e(() => {
+          c2 = l("TTFB", 0, "back-forward-cache", c2.navigationId, c2.navigationInteractionId, c2.navigationURL, n()), f2 = i(t2, c2, W, o2.reportAllChanges), f2(true);
+        }), r2) {
+          m(["soft-navigation"], (n2) => {
+            n2.forEach((n3) => {
+              n3.navigationId && (c2 = l("TTFB", 0, "soft-navigation", n3.navigationId, n3.interactionId, n3.name, n3.startTime), c2.entries = [n3], f2 = i(t2, c2, W, o2.reportAllChanges), f2(true));
+            });
+          }, o2);
         }
-        onBFCacheRestore((event) => {
-          metric = initMetric("LCP");
-          report = bindReporter(onReport, metric, LCPThresholds, opts.reportAllChanges);
-          doubleRAF(() => {
-            metric.value = performance.now() - event.timeStamp;
-            report(true);
-          });
-        });
       }
     });
   };
 
-  // dist/modules/onTTFB.js
-  var TTFBThresholds = [800, 1800];
-  var whenReady = (callback) => {
-    if (document.prerendering) {
-      whenActivated(() => whenReady(callback));
-    } else if (document.readyState !== "complete") {
-      addEventListener("load", () => whenReady(callback), true);
+  // src/web-vitals-plugin.ts
+  function storeMetrics(metricName, metric) {
+    console.log("[GatlingPlaywrightPlugin] Metrics reported");
+    console.log(metric);
+    window.__vitalsFull[metricName] = metric;
+    if (metricName === "CLS") {
+      window.__vitals[metricName] = metric.value.toFixed(4);
     } else {
-      setTimeout(callback);
+      const oldValue = Number(window.__vitals[metricName] ?? 0);
+      const newValue = Number(metric.value.toFixed(0));
+      window.__vitals[metricName] = oldValue < newValue ? newValue : oldValue;
     }
-  };
-  var onTTFB = (onReport, opts = {}) => {
-    let metric = initMetric("TTFB");
-    let report = bindReporter(onReport, metric, TTFBThresholds, opts.reportAllChanges);
-    whenReady(() => {
-      const navigationEntry = getNavigationEntry();
-      if (navigationEntry) {
-        metric.value = Math.max(navigationEntry.responseStart - getActivationStart(), 0);
-        metric.entries = [navigationEntry];
-        report(true);
-        onBFCacheRestore(() => {
-          metric = initMetric("TTFB", 0);
-          report = bindReporter(onReport, metric, TTFBThresholds, opts.reportAllChanges);
-          report(true);
-        });
-      }
-    });
-  };
-
-
-  function storeMetrics(metricName,metric){
-    if(metricName == "CLS"){
-        window.__vitals[metricName] = metric.value.toFixed(4)
-    }
-    else {
-
-        let oldValue = window.__vitals[metricName] ? window.__vitals[metricName] : 0
-        let newValue = metric.value.toFixed(0)
-        window.__vitals[metricName] = oldValue < newValue ? newValue : oldValue;
-    }
-
   }
-
-
-  function revalidateMeasuring(){
-      new PerformanceObserver((entryList) => {
-          const entries = entryList.getEntries();
-          const lastEntry = entries[entries.length - 1]; // Use the latest LCP candidate
-          const entry = Math.max(lastEntry.renderTime, lastEntry.loadTime);
-          storeMetrics("LCP",{ "value": entry})
-        }).observe({ type: "largest-contentful-paint", buffered: true });
-
-       new PerformanceObserver((entryList) => {
-          for (const entry of entryList.getEntriesByName('first-contentful-paint')) {
-            storeMetrics("FCP",{"value": entry.startTime})
-          }
-        }).observe({type: 'paint', buffered: true});
+  if (window === window.top) {
+    window.__vitals = {};
+    window.__vitalsFull = {};
+    P((v2) => storeMetrics("CLS", v2), { reportAllChanges: true });
+    U((v2) => storeMetrics("LCP", v2), { reportAllChanges: true });
+    x((v2) => storeMetrics("INP", v2), { reportAllChanges: true });
+    M((v2) => storeMetrics("FCP", v2), { reportAllChanges: true });
+    D((v2) => storeMetrics("TTFB", v2), { reportAllChanges: true });
   }
-
-  // dist/modules/collectVitals.js
-  window.__vitals = {};
-  window.__vitalsFull = {};
-  onCLS((v) => storeMetrics("CLS",v),{reportAllChanges: true});
-  onLCP((v) => storeMetrics("LCP",v),{reportAllChanges: true});
-  onINP((v) => storeMetrics("INP",v),{reportAllChanges: true});
-  onFCP((v) => storeMetrics("FCP",v),{reportAllChanges: true});
-  onTTFB((v) => storeMetrics("TTFB",v),{reportAllChanges: true});
-
-  revalidateMeasuring()
-
-  window.getPerformanceMetrics = function() {
-    console.log("[GatlingPlaywrightPlugin] Metrics collected")
-    console.log(window.__vitals)
-
-
-
+  window.getPerformanceMetrics = () => {
+    console.log("[GatlingPlaywrightPlugin] Metrics collected");
+    console.log(window.__vitals);
     return window.__vitals;
   };
-
 })();

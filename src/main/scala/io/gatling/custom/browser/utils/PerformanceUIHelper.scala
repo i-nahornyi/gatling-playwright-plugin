@@ -26,8 +26,9 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
     DefaultProtocolOptions.defaultWaitPageLoadOptions
   )
 
-  def injectMetricTrackingScript(page: Page): Unit = {
-      page.addInitScript(webVitalsJS)
+  private def injectMetricTrackingScript(page: Page, userId: Long): Unit = {
+      logger.trace(s"userID-$userId ==> inject metric tracking script")
+      page.evaluate(webVitalsJS)
   }
 
   def checkIsPageLoaded(page: Page, pageLoadValidator: PageLoadValidator): Unit = {
@@ -43,7 +44,9 @@ object PerformanceUIHelper extends ResourceCache with StrictLogging {
 
   }
 
-  def reportUIMetrics(timestamp: Long, requestName: String, page: Page, status: Status): Unit = {
+  def reportUIMetrics(timestamp: Long, requestName: String, page: Page, status: Status, userId: Long): Unit = {
+
+    injectMetricTrackingScript(page, userId)
 
     val metricsMap = extractMetricsFromBrowser(page)
 

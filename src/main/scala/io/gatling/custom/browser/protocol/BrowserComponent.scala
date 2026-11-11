@@ -1,37 +1,22 @@
 package io.gatling.custom.browser.protocol
 
-import com.microsoft.playwright.{Browser, BrowserContext, BrowserType, Playwright}
 import com.typesafe.scalalogging.StrictLogging
 import io.gatling.core.protocol.ProtocolComponents
 import io.gatling.core.session.Session
-import io.gatling.custom.browser.utils.Constants.BROWSER_CONTEXT_KEY
+import io.gatling.custom.browser.actor.BrowserActorPool
 
-import scala.collection.concurrent.TrieMap
-
-case class BrowserComponent(playwright: Playwright, launchOptions: BrowserType.LaunchOptions, contextOptions: Browser.NewContextOptions, enableUIMetrics: Boolean)
+case class BrowserComponent(enableUIMetrics: Boolean, actorPool: BrowserActorPool)
   extends ProtocolComponents with StrictLogging {
 
 
-  var browserContextsPool: TrieMap[Long, BrowserContext] = TrieMap.empty[Long, BrowserContext]
-  var browserInstance: Browser = playwright.chromium().launch(launchOptions)
-
   override def onStart: Session => Session = session => {
-
-    val browserContext = browserInstance.newContext(contextOptions)
-    browserContextsPool.put(session.userId, browserContext)
-    session.set(BROWSER_CONTEXT_KEY, browserContext.newPage())
+    actorPool.createActor(session.userId)
+    session
   }
 
   override def onExit: Session => Unit = session => {
     val userId = session.userId
-    if (browserContextsPool.contains(userId)) {
-      browserContextsPool(userId).close(new BrowserContext.CloseOptions().setReason("Closing due to onExit hook"))
-      browserContextsPool.remove(userId)
-    }
+    actorPool.stopActorById(userId, "Closing due to onExit hook")
   }
 
-
-  def recreateBrowserInstance(): Unit = {
-    browserInstance = playwright.chromium().launch(launchOptions)
-  }
 }

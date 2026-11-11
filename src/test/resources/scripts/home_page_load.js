@@ -1,5 +1,5 @@
 (function () {
-    const el = document.querySelector('[data-test-id="chat-widget-iframe"]');
+    const el = document.querySelector("img.header-hp_image-lines");
     return document.readyState === "complete" &&
         el !== null &&
         el.getBoundingClientRect().width > 0 &&

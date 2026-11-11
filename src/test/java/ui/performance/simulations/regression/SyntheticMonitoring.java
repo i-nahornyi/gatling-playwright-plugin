@@ -19,8 +19,7 @@ public class SyntheticMonitoring extends Simulation {
             .withContextOptions(new Browser.NewContextOptions()
                     .setViewportSize(1920, 1080).setBypassCSP(true)
             )
-            .enableUIMetrics()
-            .buildProtocol();
+            .enableUIMetrics();
 
 
 
