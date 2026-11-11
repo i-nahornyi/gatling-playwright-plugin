@@ -54,13 +54,13 @@
             <groupId>io.gatling</groupId>
             <artifactId>gatling-core</artifactId>
             <version>${gatling.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.gatling</groupId>
             <artifactId>gatling-core-java</artifactId>
             <version>${gatling.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.gatling.highcharts</groupId>
