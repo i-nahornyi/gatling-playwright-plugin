@@ -15,10 +15,9 @@ Follow the setup instructions in [docs](./docs/README.md).
 
 Completed features:
 
-- Java API
 - Multithreading support
 - WebVitals tracking
-- Example test cases
+- [Example test cases](https://github.com/i-nahornyi/gatling-playwright-demo)
 
 ## 🤝 Contribution
 
